@@ -1,0 +1,160 @@
+.brand-link {
+    background-color: #F4F6F9 !important;
+    color: #073d6d !important;
+}
+
+.main-sidebar {
+    /* width: 260px; */
+    background-color: #F4F6F9 !important;
+    color: #383F45 !important;
+}
+
+.sidebar-mini .main-sidebar .nav-link{
+    color: #383F45 !important;
+    /* width: 260px; */
+    background-color: #F4F6F9 !important;
+}
+
+.nav-sidebar .nav-treeview .nav-link {
+    padding-left: 20px !important;
+    white-space: nowrap;       /* Impede quebra de linha */
+    overflow: hidden;          /* Esconde o texto que ultrapassa */
+}
+
+.nav-sidebar .nav-item.menu-open > .nav-link {
+    background-color: #F4F6F9 !important;
+    white-space: nowrap;
+    color: #383F45 !important;
+}
+
+.nav-sidebar .nav-item > .nav-link:hover {
+    background-color: #F4F6F9 !important;
+    white-space: nowrap;
+}
+
+.nav-sidebar .nav-item > .nav-link.active {
+    background-color: #F4F6F9 !important;
+    white-space: nowrap;
+    color: inherit !important;
+    font-weight: normal;
+}
+
+/* Remove a borda do lado esquerdo (se existir) */
+.nav-sidebar .nav-item > .nav-link.active::before {
+    background-color: #F4F6F9 !important;
+    white-space: nowrap;
+    content: none;
+}
+
+.nav-sidebar .nav-item > .nav-link.active {
+    background-color: #F4F6F9 !important;
+    white-space: nowrap;
+    font-weight: bold;
+    color: #383F45 !important;
+}
+
+.pointer {
+  cursor: pointer;
+}
+/* #383F45 */
+
+/* Badge de andamento em documentos */
+.badge-info {
+    background-color: #17a2b8;
+    color: white;
+    font-size: 0.85em;
+    padding: 0.35em 0.65em;
+    border-radius: 0.25rem;
+    font-weight: 500;
+}
+
+.badge-info:hover {
+    background-color: #138496;
+}
+
+/* Select2 - Ajustes para AdminLTE */
+.select2-container {
+    width: 100% !important;
+}
+
+.select2-container--default .select2-selection--single,
+.select2-container--default .select2-selection--multiple {
+    border: 1px solid #ced4da;
+    border-radius: 0.25rem;
+    min-height: calc(1.5em + 0.75rem + 2px);
+}
+
+.select2-container--default .select2-selection--multiple .select2-selection__choice {
+    background-color: #555555 !important;
+    border: 1px solid #444444 !important;
+    color: #ffffff !important;
+    padding: 4px 10px !important;
+    margin: 4px 4px 0 0 !important;
+    border-radius: 0.25rem;
+    font-size: 13px !important;
+    line-height: 1.5 !important;
+    display: inline-block;
+}
+
+.select2-container--default .select2-selection--multiple .select2-selection__choice > .select2-selection__rendered {
+    color: #ffffff !important;
+    font-weight: 500;
+}
+
+.select2-selection__choice {
+    background-color: #555555 !important;
+    border: 1px solid #444444 !important;
+    color: #ffffff !important;
+}
+
+.select2-container--default .select2-selection--multiple .select2-selection__choice__remove {
+    color: #ffffff !important;
+    margin-right: 5px !important;
+    font-weight: bold !important;
+    cursor: pointer !important;
+}
+
+.select2-container--default .select2-selection--multiple .select2-selection__choice__remove:hover {
+    color: #ffeeee !important;
+}
+
+.select2-container--default.select2-container--focus .select2-selection--single,
+.select2-container--default.select2-container--focus .select2-selection--multiple {
+    border-color: #80bdff;
+    outline: 0;
+    box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+}
+
+.select2-dropdown {
+    border: 1px solid #ced4da;
+    border-radius: 0.25rem;
+}
+
+.select2-container--default .select2-results__option--highlighted[aria-selected] {
+    background-color: #007bff;
+}
+
+.select2-results__option {
+    padding: 6px 12px;
+}
+
+/* Garantir que todos os itens da sidebar tenham estilo claro */
+.nav-sidebar .nav-link {
+    color: #383F45 !important;
+    background-color: #F4F6F9 !important;
+}
+
+.nav-sidebar .nav-treeview .nav-link {
+    color: #383F45 !important;
+    background-color: #F4F6F9 !important;
+}
+
+.nav-sidebar .nav-link:hover {
+    background-color: #f0f0f0 !important;
+}
+
+.nav-item-fixed > .nav-link {
+    background-color: #F4F6F9 !important;
+    color: #383F45 !important;
+}
+

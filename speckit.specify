@@ -1,0 +1,678 @@
+# SpecKit Specify - Escopo do Sistema Jurídico
+
+## 🎯 Visão Geral
+
+**Sistema:** Gestão Jurídica Integrada
+**Objetivo:** Desenvolver um sistema jurídico para gestão de clientes, processos e documentos, permitindo o controle centralizado das informações e acompanhamento dos andamentos processuais.
+
+**Versão:** 1.0
+**Data:** 30 de março de 2026
+**Status:** Em Desenvolvimento
+
+---
+
+## 📋 Índice de Funcionalidades
+
+1. [Autenticação e Controle de Acesso](#1-autenticação-e-controle-de-acesso)
+2. [Gestão de Clientes](#2-gestão-de-clientes)
+3. [Gestão de Processos](#3-gestão-de-processos)
+4. [Andamentos Processuais](#4-andamentos-processuais)
+5. [Módulo de Arquivos](#5-módulo-de-arquivos)
+6. [Relatórios e Dashboards](#6-relatórios-e-dashboards)
+
+---
+
+## 1. Autenticação e Controle de Acesso
+
+### 1.1 Funcionalidades
+
+#### 1.1.1 Login
+- **Entrada:** Email e senha
+- **Validação:**
+  - Email em formato válido
+  - Senha mínimo 8 caracteres
+  - Máximo 3 tentativas falhadas (bloqueio de 15 minutos)
+- **Saída:** Token de autenticação JWT
+- **Status HTTP:** 200 (sucesso), 401 (não autorizado), 429 (muitas tentativas)
+
+#### 1.1.2 Recuperação de Senha
+- **Fluxo:**
+  1. Usuário solicita recuperação com email
+  2. Sistema envia link de recuperação (válido por 1 hora)
+  3. Usuário define nova senha
+  4. Sistema confirma alteração
+- **Segurança:** Hash com bcrypt
+
+#### 1.1.3 Gerenciamento de Sessão
+- **Expiração:** 8 horas de inatividade
+- **Renovação:** Automática ao interagir com o sistema
+- **Logout:** Invalidação imediata do token
+
+### 1.2 Controle de Permissões (Papéis)
+
+```
+┌─────────────────┬──────────────┬─────────────┬──────────────┐
+│ Funcionalidade  │ Administrador│ Advogado    │ Assistente   │
+├─────────────────┼──────────────┼─────────────┼──────────────┤
+│ Gerenciar Usuários│    ✓        │      ✗      │      ✗       │
+│ Visualizar Dados│    ✓        │      ✓      │      ✓       │
+│ Editar Dados    │    ✓        │      ✓      │      ✗       │
+│ Excluir Dados   │    ✓        │      ✗      │      ✗       │
+│ Upload Arquivos │    ✓        │      ✓      │      ✓       │
+└─────────────────┴──────────────┴─────────────┴──────────────┘
+```
+
+### 1.3 Modelo de Dados - Usuários
+
+```sql
+CREATE TABLE users (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(255) NOT NULL,
+    email VARCHAR(255) UNIQUE NOT NULL,
+    password VARCHAR(255) NOT NULL,
+    role ENUM('admin', 'advogado', 'assistente') DEFAULT 'assistente',
+    active BOOLEAN DEFAULT TRUE,
+    last_login TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+```
+
+---
+
+## 2. Gestão de Clientes
+
+### 2.1 Funcionalidades
+
+#### 2.1.1 Cadastro de Cliente
+- **Tipo:** Pessoa Física ou Jurídica
+- **Campos Obrigatórios:**
+  - Nome / Razão Social *(255 caracteres)*
+  - CPF / CNPJ *(validação de dígitos verificadores)*
+  - Email *(formato válido e único)*
+  - Telefone(s) *(mínimo 1)*
+  - Endereço completo
+
+- **Campos Opcionais:**
+  - WhatsApp
+  - Observações
+  - Data de nascimento (PF)
+  - Ramo de atividade (PJ)
+
+#### 2.1.2 Pesquisa e Filtros
+- Busca por nome/razão social
+- Filtro por CPF/CNPJ
+- Filtro por estado (ativo/inativo)
+- Ordenação: Nome (A-Z), Data criação, Últimas modificações
+- Paginação: 20 registros por página
+
+#### 2.1.3 Edição de Cliente
+- Edição de todos os campos
+- Histórico de alterações (auditoria)
+- Visualização de processos vinculados
+- Visualização de documentos
+
+#### 2.1.4 Exclusão Lógica
+- Cliente marcado como inativo
+- Histórico preservado
+- Dados não deletados do banco
+
+### 2.2 Modelo de Dados - Clientes
+
+```sql
+CREATE TABLE clientes (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    tipo ENUM('pf', 'pj') NOT NULL,
+    nome VARCHAR(255) NOT NULL,
+    cpf_cnpj VARCHAR(20) UNIQUE,
+    email VARCHAR(255),
+    telefone VARCHAR(20),
+    whatsapp VARCHAR(20),
+    endereco VARCHAR(500),
+    cidade VARCHAR(100),
+    estado VARCHAR(2),
+    cep VARCHAR(10),
+    data_nascimento DATE,
+    ativo BOOLEAN DEFAULT TRUE,
+    observacoes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+);
+```
+
+---
+
+## 3. Gestão de Processos
+
+### 3.1 Funcionalidades
+
+#### 3.1.1 Cadastro de Processo
+- **Campos:**
+  - Número do processo *(formato: XXXXX.XX.XXXX.X.XX.XXXX.XXXXXXX-XX)*
+  - Vara / Tribunal
+  - Tipo de ação *(ex: Trabalhista, Cível, Criminal)*
+  - Data de abertura
+  - Status *(ativo, encerrado, suspenso, arquivado)*
+  - Responsável *(Advogado associado)*
+  - Cliente(s) vinculado(s)
+  - Observações gerais
+
+#### 3.1.2 Pesquisa de Processos
+- Busca por número do processo
+- Filtro por cliente
+- Filtro por status
+- Filtro por tipo de ação
+- Filtro por período (data de abertura)
+- Ordenação: Data abertura, Status, Número
+
+#### 3.1.3 Visualização Detalhada
+- Dados completos do processo
+- Cliente(s) vinculado(s)
+- Timeline de andamentos
+- Lista de documentos
+- Responsável pelo processo
+
+### 3.2 Modelo de Dados - Processos
+
+```sql
+CREATE TABLE processos (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    numero_processo VARCHAR(50) UNIQUE NOT NULL,
+    vara_tribunal VARCHAR(255) NOT NULL,
+    tipo_acao VARCHAR(100) NOT NULL,
+    data_abertura DATE NOT NULL,
+    data_encerramento DATE,
+    status ENUM('ativo', 'encerrado', 'suspenso', 'arquivado') DEFAULT 'ativo',
+    responsavel_id INT,
+    observacoes TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (responsavel_id) REFERENCES users(id)
+);
+
+CREATE TABLE processo_cliente (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    processo_id INT NOT NULL,
+    cliente_id INT NOT NULL,
+    papel_cliente VARCHAR(100), -- autor, réu, testemunha, etc
+    UNIQUE KEY (processo_id, cliente_id),
+    FOREIGN KEY (processo_id) REFERENCES processos(id) ON DELETE CASCADE,
+    FOREIGN KEY (cliente_id) REFERENCES clientes(id) ON DELETE CASCADE
+);
+```
+
+---
+
+## 4. Andamentos Processuais
+
+### 4.1 Funcionalidades
+
+#### 4.1.1 Registro de Andamento
+- **Campos:**
+  - Processo *(seleção obrigatória)*
+  - Data do andamento
+  - Tipo *(petição, audiência, decisão, intimação, etc.)*
+  - Descrição detalhada
+  - Responsável *(usuário que registrou)*
+  - Possibilidade de anexar arquivos
+
+#### 4.1.2 Visualização
+- Timeline cronológica (mais recente primeiro)
+- Agrupamento por data
+- Exibição de arquivo anexado (se houver)
+- Quem registrou e quando
+
+#### 4.1.3 Edição e Exclusão
+- Edição: Apenas criador ou administrador
+- Exclusão: Apenas administrador (com marca de auditoria)
+- Registro de alterações
+
+### 4.2 Modelo de Dados - Andamentos
+
+```sql
+CREATE TABLE andamentos (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    processo_id INT NOT NULL,
+    tipo ENUM('peticao', 'audiencia', 'decisao', 'intimacao', 'recurso', 'outro') NOT NULL,
+    data_andamento DATE NOT NULL,
+    descricao TEXT NOT NULL,
+    usuario_id INT NOT NULL,
+    criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    atualizado_em TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (processo_id) REFERENCES processos(id) ON DELETE CASCADE,
+    FOREIGN KEY (usuario_id) REFERENCES users(id)
+);
+```
+
+---
+
+## 5. Módulo de Arquivos
+
+### 5.1 Funcionalidades
+
+#### 5.1.1 Upload de Documentos
+- **Formatos Permitidos:** PDF, DOC, DOCX, XLS, XLSX, JPG, PNG, GIF
+- **Tamanho Máximo:** 50 MB por arquivo
+- **Armazenamento:** Pasta `storage/documents/` com estrutura:
+  ```
+  storage/documents/
+  ├── clientes/{id}/
+  ├── processos/{id}/
+  └── andamentos/{id}/
+  ```
+
+#### 5.1.2 Organização
+- **Por Cliente:** Documentos associados ao cliente
+- **Por Processo:** Documentos do processo
+- **Por Andamento:** Documentos específicos do andamento
+- Nomeação automática com timestamp
+
+#### 5.1.3 Operações
+- **Download:** Download direto do arquivo
+- **Visualização:** Preview para PDFs e imagens
+- **Listagem:** Com metadados (tamanho, data, tipo)
+- **Exclusão:** Lógica (marca como deletado)
+- **Versionamento:** Histórico de versões de um arquivo
+
+#### 5.1.4 Segurança
+- Validação de MIME type
+- Geração de nomes aleatórios (evita exposição do original)
+- Armazenamento fora da pasta pública
+- Controle de acesso por permissões
+
+### 5.2 Modelo de Dados - Arquivos
+
+```sql
+CREATE TABLE documentos (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    nome_original VARCHAR(255) NOT NULL,
+    nome_armazenado VARCHAR(255) UNIQUE NOT NULL,
+    tipo_midia VARCHAR(50),
+    tamanho INT,
+    caminho VARCHAR(500) NOT NULL,
+    cliente_id INT,
+    processo_id INT,
+    andamento_id INT,
+    versao INT DEFAULT 1,
+    usuario_id INT NOT NULL,
+    ativo BOOLEAN DEFAULT TRUE,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (cliente_id) REFERENCES clientes(id),
+    FOREIGN KEY (processo_id) REFERENCES processos(id),
+    FOREIGN KEY (andamento_id) REFERENCES andamentos(id),
+    FOREIGN KEY (usuario_id) REFERENCES users(id)
+);
+```
+
+---
+
+## 6. Relatórios e Dashboards
+
+### 6.1 Dashboard Principal
+- **Total de Clientes:** *(ativo/inativo)*
+- **Total de Processos:** *(por status)*
+- **Processos por Responsável:** *(gráfico)*
+- **Andamentos Recentes:** *(últimos 10)*
+- **Arquivos Recentes:** *(últimos 5)*
+
+### 6.2 Relatórios
+- **Relatório de Clientes:** Listagem com filtros
+- **Relatório de Processos:** Por status, período, advogado
+- **Relatório de Andamentos:** Por processo, período
+- **Relatório de Atividades:** Por usuário, período
+
+### 6.3 Exportação
+- **Formatos:** PDF, CSV
+- **Dados:** Respeitando permissões de acesso
+- **Personalização:** Seleção de colunas
+
+---
+
+## 7. Regras de Negócio
+
+### 7.1 Validações
+
+| Regra | Descrição | Ação |
+|-------|-----------|------|
+| CPF/CNPJ único | Não permite duplicação | Erro 422 |
+| Email único | Não permite duplicação de emails | Erro 422 |
+| Número processo único | Cada processo tem número único | Erro 422 |
+| Cliente obrigatório em processo | Todo processo deve ter ≥1 cliente | Erro 422 |
+| Arquivo máximo 50MB | Limita tamanho de upload | Erro 413 |
+| Formatos permitidos | Apenas tipos específicos | Erro 415 |
+
+### 7.2 Relacionamentos
+
+- 1 Processo pode ter N Clientes
+- 1 Cliente pode estar em N Processos
+- 1 Processo pode ter N Andamentos
+- 1 Andamento pode ter N Documentos
+- 1 Cliente pode ter N Documentos
+
+---
+
+## 8. Fluxos de Uso
+
+### 8.1 Fluxo: Cadastro de Novo Processo
+
+```
+1. Advogado acessa "Novo Processo"
+2. Preenche dados do processo
+3. Seleciona cliente(s) existente(s) ou cria novo
+4. Define responsável
+5. Sistema valida dados
+   ✓ Sucesso → Salva processo
+   ✗ Erro → Exibe validação
+6. Redireciona para detalhes do processo
+```
+
+### 8.2 Fluxo: Registrar Andamento
+
+```
+1. Advogado acessa processo
+2. Clica em "Novo Andamento"
+3. Seleciona tipo de andamento
+4. Preenche descrição
+5. (Opcional) Anexa arquivo
+6. Clica em "Salvar"
+7. Sistema valida
+   ✓ Sucesso → Registra andamento
+   ✗ Erro → Exibe mensagem
+8. Atualiza timeline de andamentos
+```
+
+### 8.3 Fluxo: Upload de Documento
+
+```
+1. Acessa cliente/processo/andamento
+2. Clica em "Novo Documento"
+3. Seleciona arquivo (máx 50MB)
+4. Valida tipo de arquivo
+   ✓ Permitido → Realiza upload
+   ✗ Não permitido → Exibe erro
+5. Armazena em pasta estruturada
+6. Registra no banco de dados
+7. Disponibiliza para download/visualização
+```
+
+---
+
+## 9. Requisitos de Performance
+
+- **Tempo de resposta:** < 200ms para operações comuns
+- **Relatórios:** < 5 segundos para até 10k registros
+- **Conexão simultânea:** Mínimo 50 usuários
+- **Uptime:** 99% (SLA)
+
+---
+
+## 10. Requisitos de Segurança
+
+- HTTPS obrigatório
+- CORS configurado
+- Rate limiting em endpoints críticos
+- Validação de entrada em todos os campos
+- Sanitização de outputs
+- Proteção contra SQL Injection
+- Proteção contra XSS
+- CSRF tokens em formulários
+- Bcrypt para hashes de senha
+- Logging de operações críticas
+
+---
+
+## 11. Melhorias e Refinamentos UX (V1.5 - Abril 2026)
+
+### 11.1 Gestão de Clientes - Melhorias
+
+#### 11.1.1 Campo CPF
+- **Objetivo:** Identificação única de clientes pessoa física
+- **Implementação:**
+  - Adicionar campo `cpf` na tabela `clientes`
+  - Criar índice único para otimizar buscas
+  - Validação de CPF com dígitos verificadores
+  - Máscara de exibição: `###.###.###-##`
+  - Armazenamento: apenas números (11 dígitos)
+
+- **Regras de Negócio:**
+  - CPF deve ser único no sistema
+  - Validação do algoritmo de CPF
+  - Campo opcional (nullable)
+  - Busca por CPF nas telas de pesquisa
+
+#### 11.1.2 Email Opcional
+- **Mudança:** Tornar campo email não obrigatório
+- **Justificativa:** Nem todos os clientes possuem email
+- **Validação:** Quando informado, deve ser formato válido
+- **Impacto:** Remover `required` das validações de formulário
+
+---
+
+### 11.2 Gestão de Processos - UX Aprimorada
+
+#### 11.2.1 Campo de Pesquisa de Clientes (Select2 AJAX)
+- **Problema atual:** Select multiple com todos os clientes dificulta usabilidade
+- **Solução:** Campo de busca dinâmica com Select2
+
+- **Funcionalidades:**
+  - Busca por nome ou CPF
+  - Carregamento sob demanda (AJAX)
+  - Mínimo 3 caracteres para pesquisar
+  - Máximo 10 resultados por vez
+  - Exibição: "Nome - CPF formatado"
+  - Múltipla seleção com tags visuais
+
+- **Endpoint API:**
+  ```
+  GET /api/clientes/search?q={termo}&page={num}
+  ```
+
+- **Response JSON:**
+  ```json
+  {
+    "results": [
+      {
+        "id": 1,
+        "text": "João Silva - 123.456.789-00",
+        "nome": "João Silva",
+        "cpf": "12345678900"
+      }
+    ]
+  }
+  ```
+
+#### 11.2.2 Reposicionamento de Botões de Exportação
+- **Mudança:** Mover botões CSV e PDF do formulário para rodapé da tabela
+- **Justificativa:** Melhor organização visual e UX mais clara
+- **Localização:** Após fechamento da tag `</table>` de resultados
+- **Layout:** Botões alinhados à direita com contador de registros à esquerda
+
+#### 11.2.3 Modal de Novo Andamento
+- **Mudança:** Transformar formulário inline em modal Bootstrap
+- **Benefícios:**
+  - Melhor aproveitamento de espaço
+  - Foco do usuário no formulário
+  - Interface mais limpa
+
+- **Elementos do Modal:**
+  - Título: "Novo Andamento"
+  - Campos:
+    * Tipo (select: petição, audiência, decisão, intimação, recurso, outro)
+    * Data (date input, default hoje)
+    * Descrição (textarea, 4 linhas)
+  - Botões: Cancelar | Salvar Andamento
+  - Limpeza automática ao fechar
+
+#### 11.2.4 Modal de Edição de Andamento
+- **Objetivo:** Substituir alert "em desenvolvimento" por funcionalidade real
+- **Implementação:**
+  - Endpoint GET `/api/andamentos/{id}` para carregar dados
+  - Modal com mesmos campos do novo andamento
+  - Validação de permissão (somente criador ou admin)
+  - Salvamento via POST em `/alterar-andamentos`
+
+- **Auditoria:**
+  - Registrar log de todas as edições
+  - Guardar estado anterior (before/after)
+
+---
+
+### 11.3 CRUD de Tipo de Ação
+
+#### 11.3.1 Motivação
+- **Problema:** Campo livre `tipo_acao` gera inconsistências
+- **Solução:** Tabela de tipos com CRUD completo
+
+#### 11.3.2 Estrutura de Dados
+
+```sql
+CREATE TABLE tipos_acao (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    nome VARCHAR(100) UNIQUE NOT NULL,
+    codigo VARCHAR(20) UNIQUE,
+    descricao TEXT,
+    ativo BOOLEAN DEFAULT TRUE,
+    ordem INT DEFAULT 0,
+    created_at TIMESTAMP,
+    updated_at TIMESTAMP
+);
+```
+
+#### 11.3.3 Funcionalidades
+
+**Listagem:**
+- Pesquisa por nome
+- Filtro por status (ativo/inativo)
+- Ordenação por campo `ordem` e depois `nome`
+- Contador de processos vinculados
+
+**Inclusão:**
+- Campos: nome*, código, descrição, ordem, ativo
+- Validações:
+  * Nome único (case insensitive)
+  * Código único se informado
+  * Ordem >= 0
+
+**Alteração:**
+- Todos os campos editáveis
+- Validação de unicidade exceto próprio registro
+
+**Desativação:**
+- Exclusão lógica (ativo = false)
+- Não permitir se houver processos ativos vinculados
+
+#### 11.3.4 Integração com Processos
+
+- **Migration:**
+  1. Criar tabela `tipos_acao`
+  2. Migrar dados existentes de `processos.tipo_acao`
+  3. Adicionar FK `processos.tipo_acao_id`
+  4. Manter campo antigo temporariamente para rollback
+
+- **Formulário de Processos:**
+  - Substituir input text por select
+  - Carregar apenas tipos ativos
+  - Link para gerenciar tipos de ação
+
+---
+
+### 11.4 Simplificação de Menu
+
+#### 11.4.1 Remover Submenu "Andamentos"
+- **Justificativa:** Andamentos são contextuais aos processos
+- **Ação:** Remover item do menu lateral
+- **Impacto:**
+  - Migration para remover de tabela `submenu`
+  - Comentar rotas `/andamentos` (visualização)
+  - Manter rotas AJAX para inclusão/alteração
+  - Migrar permissões relacionadas
+
+---
+
+### 11.5 Documentos - Melhorias
+
+#### 11.5.1 Coluna de Andamento Vinculado
+- **Objetivo:** Mostrar contexto do documento
+- **Implementação:**
+  - Adicionar coluna "Andamento" na tabela de documentos
+  - Formato: Badge com "#Tipo DD/MM/AAAA"
+  - Exemplo: `#Audiência 13/04/2026`
+  - Null display: "-" (cinza)
+
+- **Optimização:**
+  - Eager loading: `$documentos->load('andamento')`
+  - Evitar N+1 queries
+
+#### 11.5.2 Remover "Compartilhar com Cliente"
+- **Decisão:** Campo removido das telas de upload
+- **Valor padrão:** TRUE (sempre compartilhado)
+- **Justificativa:** Simplificação da interface, alinhado com transparência
+
+- **Implementação:**
+  - Remover checkbox dos formulários
+  - Remover do JavaScript de upload
+  - Definir valor padrão no controller
+  - Manter campo no banco (future-proof)
+
+#### 11.5.3 Preview de Documentos
+- **Objetivo:** Mostrar claramente qual documento está sendo editado
+
+- **Elementos da Tela de Alteração:**
+  1. **Card de Informações:**
+     - Nome do arquivo
+     - Tipo de mídia
+     - Tamanho formatado
+     - Versão atual
+     - Data/hora do upload
+     - Botão "Visualizar Completo"
+
+  2. **Card de Preview:**
+     - Imagens (JPG, PNG, GIF): exibição inline (max 400px)
+     - PDF: iframe embutido (500px altura)
+     - Outros: ícone genérico + botão download
+
+- **Endpoint:**
+  ```
+  GET /preview-documentos/{id}
+  Response: file stream com Content-Disposition: inline
+  ```
+
+- **Segurança:**
+  - Validar permissão do usuário
+  - Verificar existência do arquivo
+  - MIME type correto no header
+
+---
+
+## 12. Roadmap Futuro (V2.0)
+
+- [ ] Notificações por email/SMS de andamentos
+- [ ] Integração com Apis de tribunais
+- [ ] Assinatura digital de documentos
+- [ ] App mobile (iOS/Android)
+- [ ] Calendário de prazos e audiências
+- [ ] Integração com Google Agenda
+- [ ] Relatórios avançados com BI
+- [ ] Backup automático na nuvem
+- [ ] Suporte a múltiplos idiomas
+
+---
+
+## 12. Recursos Técnicos
+
+| Camada | Tecnologia |
+|--------|------------|
+| Backend | Laravel 10+ |
+| Banco de Dados | MySQL 8+ |
+| Frontend | Vue.js / Blade |
+| Autenticação | JWT + Laravel Sanctum |
+| Storage | Local / S3 (futuro) |
+| Async | Redis Queue |
+| Testes | PHPUnit |
+
+---
+
+**Versão:** 1.0
+**Criado em:** 30 de março de 2026
+**Próxima review:** 30 de junho de 2026

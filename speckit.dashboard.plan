@@ -1,0 +1,36 @@
+# SpecKit Plan - Dashboard Home + Consulta Rápida
+
+## Stack e contexto
+- Laravel + Blade (padrão atual do projeto)
+- Reuso de models existentes: `Processo`, `Cliente`, `Andamento`, `Documento`
+- Rota alvo: `/home` (controller `HomeController@index`)
+
+## Arquitetura da solução
+
+1. `HomeController@index`
+   - Buscar KPIs agregados
+   - Montar query de processos com filtros opcionais (`cliente_id`, `numero_processo`)
+   - Carregar opções de cliente para select
+   - Entregar dados para `resources/views/home.blade.php`
+
+2. View `home.blade.php`
+   - Bloco de cards de KPIs
+   - Formulário de consulta rápida
+   - Tabela de resultados de processos
+
+3. Rotas
+   - Manter `GET /home` existente
+   - Sem criação de novas rotas para MVP
+
+## Riscos e mitigação
+
+- Risco: view atual de `/home` está legada (hospedagens)
+  - Mitigação: substituir integralmente por layout de dashboard jurídico
+
+- Risco: custo de query por relações
+  - Mitigação: eager loading controlado (`with(['clientes','responsavel'])`)
+
+## Validação
+
+- Teste manual em `/home` com e sem filtros
+- Smoke test automatizado básico (`SettingsAccessTest` + teste novo de dashboard)

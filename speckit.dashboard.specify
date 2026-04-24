@@ -1,0 +1,43 @@
+# SpecKit Specify - Dashboard Home com Consulta Rápida de Processos
+
+## 🎯 Objetivo
+
+Implementar um novo módulo na rota `/home` com:
+1. Dashboard resumido do jurídico
+2. Acesso rápido para consulta de processo por:
+   - Cliente
+   - Número do processo
+
+## 👤 Cenários de Usuário
+
+### US1 - Visualizar panorama rápido (P1)
+Como usuário autenticado, quero abrir `/home` e ver indicadores principais para ter contexto operacional imediato.
+
+### US2 - Consultar processo rapidamente (P1)
+Como usuário autenticado, quero filtrar processos por cliente e/ou número no próprio `/home` para localizar processos sem navegar por vários menus.
+
+### US3 - Navegar para detalhe do processo (P2)
+Como usuário autenticado, quero clicar no ID do processo retornado e abrir a tela de alteração/consulta do processo.
+
+## ✅ Requisitos Funcionais
+
+- FR-001: `/home` deve renderizar uma view de dashboard (não redirecionar para `/processos`).
+- FR-002: Dashboard deve exibir contadores: total de processos, ativos, encerrados, clientes, andamentos e documentos.
+- FR-003: Dashboard deve ter formulário de consulta rápida com `cliente_id` e `numero_processo`.
+- FR-004: Consulta rápida deve permitir busca com qualquer combinação de filtros (somente cliente, somente número, ambos).
+- FR-005: Resultado da consulta deve listar processos com colunas mínimas: ID, número, status, cliente(s), responsável.
+- FR-006: ID do processo no resultado deve linkar para rota `alterar-processos`.
+- FR-007: A tela deve respeitar autenticação e permissões já vigentes no sistema.
+
+## 📏 Critérios de Sucesso
+
+- SC-001: `/home` carrega sem erro para usuário autenticado.
+- SC-002: Consulta rápida retorna resultados corretos por cliente e número.
+- SC-003: Usuário chega ao detalhe de processo com 1 clique a partir do resultado.
+- SC-004: Não há regressão nas rotas atuais de `processos`.
+
+## 🚫 Fora de Escopo
+
+- Gráficos avançados
+- Exportação diretamente no `/home`
+- Novas permissões por perfil além das já existentes

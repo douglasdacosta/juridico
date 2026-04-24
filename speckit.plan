@@ -1,0 +1,460 @@
+# SpecKit Plan - Implementação Técnica
+
+## 🎯 Contexto
+
+Plano técnico baseado em [speckit.specify](speckit.specify) e nas respostas de [clarify.md](clarify.md).
+
+**Feature alvo:** Sistema Jurídico (brownfield em Laravel)
+**Data:** 30 de março de 2026
+**Status:** Aprovado para quebra em tarefas
+
+---
+
+## 1. Decisões confirmadas (Clarify)
+
+- Sessão expira em **24 horas** de inatividade
+- **2FA opcional** por usuário
+- Bloqueio de login após **10 tentativas**
+- Cliente com **exclusão lógica** (inativo)
+- Cliente com **múltiplos responsáveis**
+- Processo em **múltiplas filiais**
+- Encerramento de processo **manual**
+- Processo encerrado **pode ser reaberto**
+- Andamento editável **apenas pelo criador**
+- Upload máximo de arquivo **50 MB**
+- Documentos com **versionamento completo**
+- Compartilhamento de documentos com cliente: **acesso total**
+- Backup de documentos: **servidor local**
+- Analytics avançado: **não**
+- Retenção de dados: **indefinida**
+- Exportação: **PDF + CSV**
+- Integrações externas: **não**
+- API pública para terceiros: **não**
+- Escala alvo: **< 10 usuários simultâneos**, **1.000–10.000 processos**
+- Cache: **não**
+- Compliance: **LGPD**
+- Auditoria: **completa**
+- Mobile: **web responsivo**, sem prioridade no MVP
+
+---
+
+## 2. Arquitetura técnica
+
+### 2.1 Stack
+
+- Backend: Laravel 10/11 (PHP 8.3)
+- Banco: MySQL 8 (Laradock)
+- Frontend: Blade + JS existente (incremental)
+- Storage: disco local (`storage/app`)
+- Auth: Laravel Auth + Sanctum (sessão web + token interno)
+- Infra local: Laradock (`nginx`, `php-fpm`, `mysql`, `workspace`)
+
+### 2.2 Camadas de aplicação
+
+- `App\Http\Controllers` para entrada HTTP
+- `App\Services` para regras de negócio
+- `App\Models` + Eloquent para persistência
+- Form Requests para validação
+- Policies/Gates para autorização por perfil
+- Middleware para auditoria e segurança
+
+---
+
+## 3. Modelo de dados (incrementos necessários)
+
+### 3.1 Segurança e acesso
+
+- `users`
+  - adicionar `failed_attempts` (int)
+  - adicionar `locked_until` (datetime nullable)
+  - adicionar `two_factor_enabled` (bool)
+  - adicionar `two_factor_secret` (text nullable)
+
+- `sessions` (usar padrão Laravel) com TTL ajustado para 24h
+
+### 3.2 Estruturas de negócio
+
+- `clientes` (manter exclusão lógica via `ativo`)
+- `processos` (manter status + reabertura)
+- **nova** `cliente_responsavel`
+  - `cliente_id`, `user_id`, `papel`, `created_at`
+- **nova** `processo_filial`
+  - `processo_id`, `filial_id`
+- **nova** `filiais`
+  - `id`, `nome`, `cnpj`, `endereco`, `ativo`
+
+### 3.3 Andamentos e documentos
+
+- `andamentos`
+  - adicionar `created_by` (se ainda não existir semanticamente)
+  - regra de edição por ownership
+
+- `documentos`
+  - adicionar `version_group_id` (uuid)
+  - adicionar `versao` incremental
+  - adicionar `shared_with_client` (bool default true)
+
+- **nova** `audit_logs`
+  - `id`, `user_id`, `entity`, `entity_id`, `action`, `before`, `after`, `ip`, `user_agent`, `created_at`
+
+---
+
+## 4. Segurança e compliance (LGPD)
+
+- Consentimento e finalidade no cadastro de cliente
+- Mascaramento de dados sensíveis em logs
+- Trilha de auditoria para operações críticas
+- Controle de acesso por perfil e ownership
+- Proteções Laravel padrão: CSRF, validação server-side, escaping
+- Política de retenção indefinida com soft delete para entidades chave
+
+---
+
+## 5. Regras de autorização
+
+- `admin`: gerenciamento total
+- `advogado`: CRUD de processos/andamentos sob seu escopo
+- `assistente`: leitura e operações limitadas por policy
+- Edição de andamento: somente criador (`created_by`) ou `admin`
+- Reabertura de processo: `advogado responsável` ou `admin`
+
+---
+
+## 6. UX e entregáveis MVP
+
+### 6.1 MVP inclui
+
+- Login com lockout 10 tentativas
+- Sessão 24h
+- 2FA opcional (habilitar/desabilitar em perfil)
+- CRUD clientes, processos, andamentos
+- Múltiplos responsáveis por cliente
+- Múltiplas filiais por processo
+- Upload/documentos com versionamento completo
+- Exportações em PDF e CSV
+- Auditoria completa
+- Layout responsivo básico (desktop-first)
+
+### 6.2 MVP não inclui
+
+- Integrações externas (CNJ, calendário, pagamentos)
+- API pública para terceiros
+- Dashboard analítico avançado
+- Cache Redis
+- App mobile nativo
+
+---
+
+## 7. Plano de implementação por fases
+
+### Fase 1 — Base de segurança e governança
+
+1. Ajustar autenticação (24h, lockout 10, 2FA opcional)
+2. Criar tabela de auditoria e middleware de logging
+3. Definir policies por perfil e ownership
+
+### Fase 2 — Modelo de domínio
+
+1. Migrations para filiais, vínculos e versionamento de documentos
+2. Refatorar models/relations Eloquent
+3. Atualizar Form Requests e validações de negócio
+
+### Fase 3 — Casos de uso principais
+
+1. Fluxo completo de clientes (com múltiplos responsáveis)
+2. Fluxo completo de processos (com múltiplas filiais e reabertura)
+3. Fluxo completo de andamentos (edição por criador)
+4. Fluxo de arquivos com versionamento e compartilhamento
+
+### Fase 4 — Exportações e hardening
+
+1. Exportações PDF e CSV
+2. Revisão LGPD e mascaramento de logs
+3. Testes finais e ajustes de responsividade
+
+### Fase 5 — Melhorias UX e Refinamentos (V1.5 - Abril 2026)
+
+1. **Clientes:** Campo CPF + Email opcional
+2. **Processos:** Select2 para clientes + Botões no rodapé
+3. **Andamentos:** Modais de inclusão e edição
+4. **Tipo de Ação:** CRUD completo com migration de dados
+5. **Menu:** Remover submenu Andamentos
+6. **Documentos:** Coluna andamento + Preview + Remover "compartilhar"
+
+---
+
+## 7. Detalhamento Técnico - Fase 5 (Melhorias UX)
+
+### 7.1 Campo CPF em Clientes
+
+**Banco de Dados:**
+```sql
+ALTER TABLE clientes ADD COLUMN cpf VARCHAR(11) AFTER nome;
+CREATE UNIQUE INDEX idx_clientes_cpf ON clientes(cpf);
+```
+
+**Model:**
+```php
+protected $fillable = [..., 'cpf'];
+
+public function setCpfAttribute($value) {
+    $this->attributes['cpf'] = preg_replace('/\D/', '', $value);
+}
+
+public function getCpfAttribute($value) {
+    return $value ? preg_replace('/(\d{3})(\d{3})(\d{3})(\d{2})/', '$1.$2.$3-$4', $value) : null;
+}
+```
+
+**Validação:**
+- Regra: `'cpf' => 'nullable|cpf|unique:clientes,cpf'`
+- Package: `geekcom/validator-docs` ou custom rule
+
+**Views:**
+- Adicionar campo com máscara jQuery Mask Plugin
+- Incluir na busca de clientes
+- Exibir na listagem
+
+---
+
+### 7.2 Select2 AJAX para Clientes em Processos
+
+**Controller Endpoint:**
+```php
+// ProcessosController ou ClientesController
+public function searchClientes(Request $request)
+{
+    $term = $request->get('q');
+    $page = $request->get('page', 1);
+
+    $clientes = Cliente::where('ativo', true)
+        ->where(function($query) use ($term) {
+            $query->where('nome', 'like', "%{$term}%")
+                  ->orWhere('cpf', 'like', "%{$term}%");
+        })
+        ->select('id', 'nome', 'cpf')
+        ->limit(10)
+        ->offset(($page - 1) * 10)
+        ->get()
+        ->map(function($cliente) {
+            return [
+                'id' => $cliente->id,
+                'text' => $cliente->nome . ($cliente->cpf ? ' - ' . $cliente->cpf_formatted : '')
+            ];
+        });
+
+    return response()->json(['results' => $clientes]);
+}
+```
+
+**Rota:**
+```php
+Route::get('/api/clientes/search', [ProcessosController::class, 'searchClientes'])
+    ->middleware('auth');
+```
+
+**JavaScript (View):**
+```javascript
+$('#clientes').select2({
+    ajax: {
+        url: '/api/clientes/search',
+        dataType: 'json',
+        delay: 250,
+        data: function (params) {
+            return { q: params.term, page: params.page || 1 };
+        },
+        processResults: function (data) {
+            return { results: data.results };
+        }
+    },
+    minimumInputLength: 3,
+    placeholder: 'Digite nome ou CPF do cliente',
+    language: 'pt-BR'
+});
+```
+
+---
+
+### 7.3 Modal de Andamentos
+
+**Nova Rota API:**
+```php
+Route::get('/api/andamentos/{id}', [AndamentosController::class, 'show'])
+    ->middleware('auth');
+```
+
+**Controller Method:**
+```php
+public function show($id)
+{
+    $andamento = Andamento::findOrFail($id);
+
+    // Verificar permissão
+    $this->authorize('view', $andamento);
+
+    return response()->json([
+        'id' => $andamento->id,
+        'tipo' => $andamento->tipo,
+        'data_andamento' => $andamento->data_andamento->format('Y-m-d'),
+        'descricao' => $andamento->descricao
+    ]);
+}
+```
+
+**Policy:**
+```php
+public function update(User $user, Andamento $andamento)
+{
+    return $user->isAdmin() || $user->id === $andamento->created_by;
+}
+```
+
+---
+
+### 7.4 CRUD Tipo de Ação
+
+**Migration 1 - Criar Tabela:**
+```php
+Schema::create('tipos_acao', function (Blueprint $table) {
+    $table->id();
+    $table->string('nome', 100)->unique();
+    $table->string('codigo', 20)->unique()->nullable();
+    $table->text('descricao')->nullable();
+    $table->boolean('ativo')->default(true);
+    $table->integer('ordem')->default(0);
+    $table->timestamps();
+});
+
+// Migrar dados
+DB::statement(
+    'INSERT INTO tipos_acao (nome, ativo, created_at, updated_at)
+     SELECT DISTINCT tipo_acao, true, NOW(), NOW()
+     FROM processos WHERE tipo_acao IS NOT NULL AND tipo_acao != ""'
+);
+```
+
+**Migration 2 - Alterar Processos:**
+```php
+Schema::table('processos', function (Blueprint $table) {
+    $table->renameColumn('tipo_acao', 'tipo_acao_old');
+});
+
+Schema::table('processos', function (Blueprint $table) {
+    $table->foreignId('tipo_acao_id')->nullable()
+          ->after('vara_tribunal')
+          ->constrained('tipos_acao')
+          ->nullOnDelete();
+});
+
+// Vincular dados
+DB::statement(
+    'UPDATE processos p
+     INNER JOIN tipos_acao ta ON p.tipo_acao_old = ta.nome
+     SET p.tipo_acao_id = ta.id'
+);
+```
+
+**Model:**
+```php
+class TipoAcao extends Model
+{
+    protected $table = 'tipos_acao';
+    protected $fillable = ['nome', 'codigo', 'descricao', 'ativo', 'ordem'];
+    protected $casts = ['ativo' => 'boolean'];
+
+    public function processos() {
+        return $this->hasMany(Processo::class, 'tipo_acao_id');
+    }
+
+    public function scopeAtivos($query) {
+        return $query->where('ativo', true)->orderBy('ordem')->orderBy('nome');
+    }
+}
+```
+
+**Controller:** `TiposAcaoController` com CRUD padrão
+
+**Rotas:**
+```php
+Route::match(['get', 'post'], '/tipos-acao', [TiposAcaoController::class, 'index'])->name('tipos-acao');
+Route::match(['get', 'post'], '/incluir-tipos-acao', [TiposAcaoController::class, 'incluir']);
+Route::match(['get', 'post'], '/alterar-tipos-acao', [TiposAcaoController::class, 'alterar']);
+Route::post('/desativar-tipos-acao', [TiposAcaoController::class, 'desativar']);
+```
+
+---
+
+### 7.5 Preview de Documentos
+
+**Controller Method:**
+```php
+public function preview($id)
+{
+    $documento = Documento::findOrFail($id);
+    $this->authorize('view', $documento);
+
+    $path = storage_path('app/' . $documento->caminho);
+
+    if (!file_exists($path)) {
+        abort(404, 'Arquivo não encontrado');
+    }
+
+    return response()->file($path, [
+        'Content-Type' => mime_content_type($path),
+        'Content-Disposition' => 'inline; filename="' . $documento->nome_original . '"'
+    ]);
+}
+```
+
+**Rota:**
+```php
+Route::get('/preview-documentos/{id}', [DocumentosController::class, 'preview'])
+    ->name('preview-documentos')
+    ->middleware('auth');
+```
+
+---
+
+## 8. Estratégia de testes
+
+- Unit tests para Services e regras de autorização
+- Feature tests para autenticação, lockout, 2FA e fluxos críticos
+- Testes de upload/versionamento de documentos
+- Testes de auditoria (eventos críticos gravados)
+- Regressão mínima em CRUD existente
+
+Meta:
+- Cobertura mínima em regras críticas (auth, autorização, auditoria, processos)
+
+---
+
+## 9. Riscos e mitigação
+
+- Risco: regressão em permissões existentes
+  Mitigação: policies com testes de matriz de perfis
+
+- Risco: aumento de complexidade em documentos/versionamento
+  Mitigação: service dedicado e testes de concorrência básicos
+
+- Risco: impacto de auditoria no desempenho
+  Mitigação: log assíncrono opcional posterior (fora do MVP)
+
+---
+
+## 10. Definition of Done
+
+- Todos os fluxos do MVP operacionais no ambiente Laradock
+- Regras do clarify aplicadas no comportamento do sistema
+- Exportação PDF/CSV funcional
+- Auditoria completa validada por testes
+- Sem erro crítico em autenticação/autorização
+
+---
+
+## 11. Próximo comando Spec-Kit
+
+Execute:
+
+`/speckit.tasks`
+
+para gerar a lista de tarefas detalhadas a partir deste plano.

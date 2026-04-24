@@ -1,0 +1,26 @@
+
+.table th.sorting_asc::after {
+    content: " ⬆";  /* Ícone para ordenação ascendente */
+    color: #000;
+}
+
+.table thead th.sorting_desc::after {
+    content: " ⬇";  /* Ícone para ordenação descendente */
+    color: #000;
+}
+
+.select2-container .select2-selection--single {
+    height: 38px !important; /* Aumenta a altura do campo */
+    padding: 5px 10px; /* Ajusta o espaçamento interno */
+    line-height: 30px; /* Mantém o alinhamento vertical */
+}
+
+.select2-container--default .select2-selection--single .select2-selection__rendered {
+    line-height: 38px !important; /* Centraliza o texto verticalmente */
+}
+
+.select2-container--default .select2-selection--single .select2-selection__arrow {
+    height: 36px !important; /* Ajusta a altura da seta */
+}
+
+

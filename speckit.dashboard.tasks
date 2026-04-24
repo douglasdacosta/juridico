@@ -1,0 +1,23 @@
+# SpecKit Tasks - Dashboard Home + Consulta Rápida
+
+## Fase 1 — Controller
+
+- [x] T001 Refatorar `HomeController@index` para renderizar dashboard
+- [x] T002 Adicionar agregações de KPIs (processos, clientes, andamentos, documentos)
+- [x] T003 Implementar query de consulta rápida por `cliente_id` e `numero_processo`
+- [x] T004 Adicionar `clientesOptions` para filtro no form
+
+## Fase 2 — View
+
+- [x] T101 Substituir conteúdo legado de `resources/views/home.blade.php`
+- [x] T102 Adicionar cards de resumo (KPIs)
+- [x] T103 Adicionar formulário de consulta rápida
+- [x] T104 Adicionar tabela de resultados com link para `alterar-processos`
+
+## Fase 3 — Validação
+
+- [x] T201 Validar rota `/home` para usuário autenticado
+- [x] T202 Validar consulta por cliente
+- [x] T203 Validar consulta por número de processo
+- [x] T204 Validar consulta combinada (cliente + número)
+- [x] T205 Executar smoke tests

@@ -1,0 +1,419 @@
+/* ========================================
+   AGENDAMENTOS FASE 1 - Estilos Customizados
+   ======================================== */
+
+/* Status Badges - Colores e Estilos */
+.badge-status {
+    padding: 0.5rem 0.75rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    border-radius: 0.25rem;
+    display: inline-block;
+}
+
+.badge-rascunho {
+    background-color: #6c757d;
+    color: #fff;
+}
+
+.badge-atribuido {
+    background-color: #0dcaf0;
+    color: #000;
+}
+
+.badge-producao {
+    background-color: #fd7e14;
+    color: #fff;
+}
+
+.badge-concluido {
+    background-color: #198754;
+    color: #fff;
+}
+
+.badge-reagendado {
+    background-color: #6f42c1;
+    color: #fff;
+}
+
+.badge-retorno {
+    background-color: #dc3545;
+    color: #fff;
+}
+
+.badge-reavaliacao {
+    background-color: #e83e8c;
+    color: #fff;
+}
+
+.badge-cancelado {
+    background-color: #555;
+    color: #fff;
+}
+
+/* Abas */
+.nav-tabs {
+    border-bottom: 2px solid #dee2e6;
+}
+
+.nav-tabs .nav-link {
+    color: #495057;
+    border: 1px solid transparent;
+    border-bottom: 2px solid transparent;
+    padding: 0.75rem 1.5rem;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.nav-tabs .nav-link:hover {
+    border-color: #e9ecef #e9ecef #dee2e6;
+    color: #0056b3;
+}
+
+.nav-tabs .nav-link.active {
+    color: #0056b3;
+    background-color: #fff;
+    border: 1px solid #dee2e6;
+    border-bottom-color: #fff;
+    font-weight: 600;
+}
+
+/* Loading Spinner */
+.loading-spinner {
+    display: none;
+    margin-left: 10px;
+}
+
+.loading-spinner.show {
+    display: inline-block;
+}
+
+.spinner-border-sm {
+    width: 1rem;
+    height: 1rem;
+    border-width: 0.15rem;
+}
+
+/* Cartões de Prestadores */
+.prestador-card {
+    border: 1px solid #dee2e6;
+    border-radius: 0.5rem;
+    padding: 1rem;
+    margin-bottom: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    background-color: #fff;
+}
+
+.prestador-card:hover {
+    border-color: #0d6efd;
+    background-color: #f8f9fa;
+    box-shadow: 0 2px 8px rgba(13, 110, 253, 0.15);
+    transform: translateY(-2px);
+}
+
+.prestador-card.selected {
+    border-color: #0d6efd;
+    background-color: #e7f1ff;
+    box-shadow: 0 2px 12px rgba(13, 110, 253, 0.25);
+    border-width: 2px;
+}
+
+.prestador-card h6 {
+    margin-bottom: 0.5rem;
+    color: #333;
+}
+
+.prestador-card p {
+    margin-bottom: 0.25rem;
+    color: #666;
+}
+
+/* Timeline de Auditoria */
+.audit-timeline {
+    position: relative;
+    padding: 1rem;
+}
+
+.audit-timeline::before {
+    content: '';
+    position: absolute;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background-color: #dee2e6;
+}
+
+.audit-item {
+    padding: 1rem;
+    padding-left: 2rem;
+    margin-bottom: 1.5rem;
+    position: relative;
+    border-left: 3px solid #dee2e6;
+    background-color: #f9f9f9;
+    border-radius: 0.25rem;
+    margin-left: 0;
+}
+
+.audit-item::before {
+    content: '';
+    position: absolute;
+    left: -7px;
+    top: 1.5rem;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background-color: #fff;
+    border: 2px solid #dee2e6;
+}
+
+.audit-item.action-criado {
+    border-left-color: #198754;
+}
+
+.audit-item.action-criado::before {
+    border-color: #198754;
+    background-color: #198754;
+}
+
+.audit-item.action-atribuido {
+    border-left-color: #0dcaf0;
+}
+
+.audit-item.action-atribuido::before {
+    border-color: #0dcaf0;
+    background-color: #0dcaf0;
+}
+
+.audit-item.action-producao {
+    border-left-color: #fd7e14;
+}
+
+.audit-item.action-producao::before {
+    border-color: #fd7e14;
+    background-color: #fd7e14;
+}
+
+.audit-item.action-concluido {
+    border-left-color: #198754;
+}
+
+.audit-item.action-concluido::before {
+    border-color: #198754;
+    background-color: #198754;
+}
+
+.audit-item.action-reagendado {
+    border-left-color: #6f42c1;
+}
+
+.audit-item.action-reagendado::before {
+    border-color: #6f42c1;
+    background-color: #6f42c1;
+}
+
+.audit-item.action-retorno {
+    border-left-color: #dc3545;
+}
+
+.audit-item.action-retorno::before {
+    border-color: #dc3545;
+    background-color: #dc3545;
+}
+
+.audit-item.action-reavaliacao {
+    border-left-color: #e83e8c;
+}
+
+.audit-item.action-reavaliacao::before {
+    border-color: #e83e8c;
+    background-color: #e83e8c;
+}
+
+.audit-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.75rem;
+    flex-wrap: wrap;
+}
+
+.audit-action {
+    font-weight: 600;
+    color: #333;
+    margin-right: 1rem;
+}
+
+.audit-time {
+    color: #6c757d;
+    font-size: 0.85rem;
+}
+
+.audit-user {
+    color: #0056b3;
+    font-size: 0.9rem;
+    font-weight: 500;
+}
+
+.audit-changes {
+    background-color: #fff;
+    padding: 0.75rem;
+    border-radius: 0.25rem;
+    margin-top: 0.75rem;
+    font-size: 0.9rem;
+    border-left: 3px solid #e9ecef;
+    color: #666;
+}
+
+.audit-changes strong {
+    color: #333;
+}
+
+/* Modal Estilos */
+.modal-header.bg-primary {
+    background: linear-gradient(135deg, #0d6efd 0%, #0dcaf0 100%);
+}
+
+.modal-header.bg-info {
+    background: linear-gradient(135deg, #0dcaf0 0%, #198754 100%);
+}
+
+/* Campos de Formulário */
+.form-control:focus {
+    border-color: #0d6efd;
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+.form-control[readonly] {
+    background-color: #e9ecef;
+    color: #666;
+}
+
+/* Botões */
+.btn {
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.btn:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15);
+}
+
+.btn-success {
+    background-color: #198754;
+    border-color: #198754;
+}
+
+.btn-success:hover {
+    background-color: #157347;
+    border-color: #157347;
+}
+
+/* Cards */
+.card {
+    border: 1px solid #dee2e6;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    border-radius: 0.5rem;
+}
+
+.card-header {
+    background-color: #f8f9fa;
+    border-bottom: 1px solid #dee2e6;
+    padding: 1.25rem;
+}
+
+.card-title {
+    margin-bottom: 0;
+    color: #333;
+    font-weight: 600;
+}
+
+/* DataTable */
+#table_agendamentos {
+    font-size: 0.9rem;
+}
+
+#table_agendamentos tbody tr:hover {
+    background-color: #f5f5f5;
+}
+
+#table_agendamentos th {
+    background-color: #f8f9fa;
+    color: #333;
+    font-weight: 600;
+    border-bottom: 2px solid #dee2e6;
+}
+
+/* Responsividade */
+@media (max-width: 768px) {
+    .prestador-card .row {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .prestador-card .col-md-4.text-right {
+        text-align: left !important;
+        margin-top: 1rem;
+        padding-top: 1rem;
+        border-top: 1px solid #dee2e6;
+    }
+
+    .audit-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .audit-time {
+        margin-top: 0.25rem;
+    }
+
+    .nav-tabs .nav-link {
+        padding: 0.75rem 1rem;
+        font-size: 0.9rem;
+    }
+}
+
+/* Animações */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.tab-pane.active {
+    animation: slideIn 0.2s ease;
+}
+
+/* Alerts Customizados */
+.alert {
+    border-radius: 0.5rem;
+    border: none;
+    padding: 1rem;
+}
+
+.alert-warning {
+    background-color: #fff3cd;
+    color: #664d03;
+}
+
+.alert-info {
+    background-color: #cfe2ff;
+    color: #084298;
+}
+
+/* Inputs com máscara */
+.input-group .form-control {
+    border-right: 1px solid #dee2e6;
+}
+
+.input-group-append .btn {
+    border-left: none;
+}

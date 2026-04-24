@@ -1,0 +1,452 @@
+# SpecKit Tasks - Sistema Jurídico
+
+## 🎯 Contexto
+
+Tarefas derivadas de [speckit.plan](speckit.plan), [speckit.specify](speckit.specify) e [clarify.md](clarify.md).
+
+**Escopo:** MVP
+**Stack:** Laravel + MySQL + Laradock
+**Status:** Pronto para implementação
+
+---
+
+## 0. Pré-requisitos e baseline
+
+- [ ] T001 Validar ambiente Laradock operacional (`nginx`, `mysql`, `php-fpm`, `workspace`)
+- [ ] T002 Confirmar `.env` com conexão MySQL correta e sessão configurável
+- [ ] T003 Garantir baseline limpo de migrations/tests antes de iniciar feature
+
+**DoD da fase 0**
+- Ambiente sobe sem erro
+- Banco conecta via `php artisan migrate:status`
+
+---
+
+## 1. Segurança e autenticação
+
+### 1.1 Sessão, lockout e 2FA opcional
+
+- [x] T101 Criar migration para `users.failed_attempts` e `users.locked_until`
+- [x] T102 Criar migration para `users.two_factor_enabled` e `users.two_factor_secret`
+- [x] T103 Ajustar configuração de sessão para expiração de 24h
+- [x] T104 Implementar lógica de lockout após 10 tentativas inválidas
+- [x] T105 Implementar fluxo de habilitar/desabilitar 2FA no perfil do usuário
+- [x] T106 Atualizar telas de login/perfil para mensagens de bloqueio e estado de 2FA
+
+### 1.2 Autorização por perfil
+
+- [x] T111 Revisar papéis (`admin`, `advogado`, `assistente`) no sistema atual
+- [x] T112 Criar/ajustar Policies para clientes, processos, andamentos e documentos
+- [x] T113 Aplicar middleware/policy checks em rotas e controllers críticos
+
+**DoD da fase 1**
+- Lockout funcional em 10 tentativas
+- Sessão expira em 24h
+- 2FA opcional funcional
+- Regras de acesso por perfil aplicadas
+
+---
+
+## 2. Auditoria e LGPD
+
+### 2.1 Infra de auditoria completa
+
+- [x] T201 Criar migration da tabela `audit_logs`
+- [x] T202 Criar model/service para registrar eventos de auditoria
+- [x] T203 Implementar middleware de auditoria para operações críticas (create/update/delete/reopen)
+- [x] T204 Capturar `user_id`, entidade, before/after, IP, user-agent
+- [x] T205 Garantir mascaramento de dados sensíveis no payload de log
+
+### 2.2 Ajustes de conformidade
+
+- [x] T211 Adicionar consentimento/finalidade no cadastro de cliente
+- [x] T212 Revisar validações e mensagens para LGPD (dados pessoais)
+
+**DoD da fase 2**
+- Todas as operações críticas geram log
+- Dados sensíveis não ficam expostos em auditoria
+
+---
+
+## 3. Modelo de domínio e migrations
+
+### 3.1 Estruturas novas
+
+- [x] T301 Criar tabela `filiais`
+- [x] T302 Criar tabela pivot `processo_filial`
+- [x] T303 Criar tabela pivot `cliente_responsavel`
+- [x] T304 Evoluir tabela `documentos` com `version_group_id`, `versao`, `shared_with_client`
+- [x] T305 Evoluir tabela `andamentos` com ownership explícito (`created_by`) se necessário
+
+### 3.2 Eloquent e validações
+
+- [x] T311 Ajustar relacionamentos em models (`Cliente`, `Processo`, `Documento`, `Andamento`, `User`, `Filial`)
+- [x] T312 Atualizar Form Requests para novas regras de negócio
+- [x] T313 Ajustar factories/seeders para suportar novas estruturas
+
+**DoD da fase 3**
+- Migrations sobem limpas
+- Relacionamentos Eloquent cobrem novos vínculos
+
+---
+
+## 4. Casos de uso - clientes e processos
+
+### 4.1 Clientes
+
+- [x] T401 Implementar/ajustar CRUD de cliente com exclusão lógica (`ativo`)
+- [x] T402 Permitir múltiplos responsáveis por cliente
+- [x] T403 Garantir listagem, busca e edição sem regressão
+
+### 4.2 Processos
+
+- [x] T411 Implementar vínculo de processo com múltiplas filiais
+- [x] T412 Implementar encerramento manual de processo
+- [x] T413 Implementar reabertura de processo com regra de autorização
+- [x] T414 Validar vínculo obrigatório com pelo menos 1 cliente
+
+**DoD da fase 4**
+- Fluxos de cliente e processo completos e autorizados
+- Reabertura funcional conforme regra
+
+---
+
+## 5. Casos de uso - andamentos e documentos
+
+### 5.1 Andamentos
+
+- [x] T501 Implementar criação de andamento com ownership (`created_by`)
+- [x] T502 Restringir edição de andamento ao criador ou admin
+- [x] T503 Garantir timeline cronológica funcional por processo
+
+### 5.2 Documentos
+
+- [x] T511 Implementar upload com limite de 50 MB e validação de MIME
+- [x] T512 Implementar versionamento completo de documentos
+- [x] T513 Habilitar compartilhamento total com cliente (flag e controle)
+- [x] T514 Organizar armazenamento local por contexto (cliente/processo/andamento)
+- [x] T515 Implementar exclusão lógica e histórico de versões
+
+**DoD da fase 5**
+- Upload/versionamento operacionais
+- Edição de andamento respeita ownership
+
+---
+
+## 6. Exportações
+
+- [x] T601 Implementar exportação PDF para listagens principais
+- [x] T602 Implementar exportação CSV para listagens principais
+- [x] T603 Garantir exportação respeitando permissões de acesso
+
+**DoD da fase 6**
+- Exportações PDF e CSV funcionando em clientes/processos
+
+---
+
+## 7. Testes e hardening
+
+> Execução completa da fase 7 ficará para o final da implementação (hardening final).
+
+### 7.1 Testes automatizados
+
+- [x] T701 Criar testes de autenticação (sessão 24h, lockout, 2FA opcional)
+- [x] T702 Criar testes de autorização por perfil e ownership
+- [x] T703 Criar testes de auditoria em operações críticas
+- [x] T704 Criar testes de processos (encerrar/reabrir + múltiplas filiais)
+- [x] T705 Criar testes de documentos (upload 50MB, versionamento)
+- [x] T706 Criar testes de exportação PDF/CSV
+
+### 7.2 Estabilidade
+
+- [x] T711 Executar regressão mínima do CRUD existente
+- [x] T712 Revisar responsividade web básica (desktop-first, mobile funcional)
+
+**DoD da fase 7**
+- Testes críticos passando
+- Sem regressões severas no fluxo existente
+
+**Validação atual**
+- Suíte crítica validada no container `workspace` (Laradock): `LoginLockoutTest`, `SettingsAccessTest`, `ProcessosExportTest`, `AndamentosOwnershipTest`
+- Cobertura de clientes validada: `ClientesCrudTest` (inclusão, alteração e exportação CSV)
+- Cobertura fase 7 validada: `AuthSessionTwoFactorTest`, `AuditTrailTest`, `ProcessosLifecycleTest`, `DocumentosVersioningTest`, `ExportPdfTest`
+- Status consolidado da suíte focada: todos os testes listados acima passaram na execução em container
+- Observação de ambiente local: execução direta do PHPUnit no host continua bloqueada por ausência das extensões PHP `dom`, `mbstring`, `xml` e `xmlwriter`
+
+---
+
+## 8. Sequência recomendada de execução
+
+1. Fase 0 → Fase 1 → Fase 2
+2. Fase 3
+3. Fase 4 + Fase 5
+4. Fase 6
+5. Fase 7
+
+---
+
+## 9. Dependências entre tarefas (resumo)
+
+- `T101–T106` dependem de `T001–T003`
+- `T201–T205` dependem de `T101–T113`
+- `T301–T305` dependem de baseline estável (`T003`)
+- `T401–T414` dependem de `T301–T313`
+- `T501–T515` dependem de `T301–T313`
+- `T601–T603` dependem de fluxos de domínio estabilizados
+- `T701–T712` dependem da implementação das fases anteriores
+
+---
+
+## 10. Critério global de pronto (MVP)
+
+- [ ] Sessão 24h, lockout 10 tentativas e 2FA opcional ativos
+- [ ] Auditoria completa aplicada
+- [ ] Clientes com múltiplos responsáveis
+- [ ] Processos com múltiplas filiais e reabertura
+- [ ] Andamentos com edição por criador/admin
+- [ ] Documentos com upload 50MB e versionamento completo
+- [ ] Exportação PDF e CSV funcional
+- [ ] Regras LGPD básicas atendidas
+- [ ] Fluxo web responsivo básico funcional
+
+---
+
+## 11. Fase 8 - Melhorias UX (V1.5 - Abril 2026)
+
+### 11.1 Clientes - Campo CPF e Email Opcional
+
+- [ ] T801 Criar migration para adicionar campo `cpf` (VARCHAR 11, unique, nullable)
+- [ ] T802 Criar índice único em `clientes.cpf`
+- [ ] T803 Atualizar Model `Cliente` com accessor/mutator para formatação de CPF
+- [ ] T804 Criar validação customizada de CPF (ou instalar package `geekcom/validator-docs`)
+- [ ] T805 Atualizar Form Request de clientes com validação `cpf: nullable|cpf|unique`
+- [ ] T806 Remover `required` da validação de email (manter validação de formato)
+- [ ] T807 Adicionar campo CPF no formulário de inclusão/alteração com máscara
+- [ ] T808 Adicionar campo CPF na listagem de clientes
+- [ ] T809 Incluir CPF no filtro de pesquisa de clientes
+- [ ] T810 Testar validação de CPF (dígitos verificadores, duplicidade)
+
+**DoD da fase 11.1:**
+- Campo CPF funcional com validação completa
+- Email é opcional mas formato validado quando informado
+- Busca por CPF operacional
+
+---
+
+### 11.2 Processos - Select2 AJAX para Clientes
+
+- [ ] T811 Criar endpoint GET `/api/clientes/search?q={termo}&page={num}`
+- [ ] T812 Implementar controller method com busca por nome ou CPF (limit 10)
+- [ ] T813 Adicionar rota da API com middleware auth
+- [ ] T814 Atualizar view de processos substituindo select multiple por select2
+- [ ] T815 Implementar JavaScript Select2 com AJAX (minimum 3 chars)
+- [ ] T816 Configurar formatação do resultado ("Nome - CPF")
+- [ ] T817 Testar performance com grande volume de clientes
+- [ ] T818 Implementar tratamento de erros no AJAX
+- [ ] T819 Adicionar placeholder e mensagens de "nenhum resultado"
+
+**DoD da fase 11.2:**
+- Select2 AJAX funcional para busca de clientes
+- Performance adequada (< 500ms)
+- UX responsiva e sem bugs
+
+---
+
+### 11.3 Processos - Reposicionar Botões e Modais
+
+- [ ] T820 Mover botões CSV e PDF do formulário para rodapé da tabela
+- [ ] T821 Adicionar contador de registros ao lado dos botões
+- [ ] T822 Adicionar ícones aos botões de exportação
+- [ ] T823 Criar modal Bootstrap para "Novo Andamento"
+- [ ] T824 Mover formulário inline para dentro do modal
+- [ ] T825 Implementar JavaScript para abrir/fechar modal
+- [ ] T826 Implementar função `salvarAndamentoModal()` com AJAX
+- [ ] T827 Adicionar limpeza de formulário ao fechar modal
+- [ ] T828 Criar endpoint GET `/api/andamentos/{id}` para carregar dados
+- [ ] T829 Criar modal Bootstrap para "Editar Andamento"
+- [ ] T830 Implementar função `editarAndamento(id)` com AJAX load
+- [ ] T831 Implementar função `salvarEdicaoAndamento()` com validação
+- [ ] T832 Adicionar Policy/verificação de permissão (criador ou admin)
+- [ ] T833 Implementar auditoria de edições de andamento
+- [ ] T834 Testar fluxo completo de inclusão e edição via modal
+
+**DoD da fase 11.3:**
+- Botões no rodapé funcionais
+- Modal de novo andamento operacional
+- Modal de edição implementado com permissões
+- Auditoria de edições registrada
+
+---
+
+### 11.4 CRUD Tipo de Ação
+
+- [ ] T835 Criar migration da tabela `tipos_acao`
+- [ ] T836 Migrar dados existentes de `processos.tipo_acao` para nova tabela
+- [ ] T837 Criar migration para renomear `processos.tipo_acao` para `tipo_acao_old`
+- [ ] T838 Criar migration para adicionar FK `processos.tipo_acao_id`
+- [ ] T839 Executar UPDATE para vincular processos aos tipos migrados
+- [ ] T840 Criar Model `TipoAcao` com relações e scopes
+- [ ] T841 Atualizar Model `Processo` com relação `tipoAcao()`
+- [ ] T842 Criar `TiposAcaoController` com métodos index/incluir/alterar/desativar
+- [ ] T843 Criar Form Request para validação de tipos de ação
+- [ ] T844 Criar view `tipos-acao.blade.php` (pesquisa e formulário)
+- [ ] T845 Adicionar rotas para CRUD de tipos de ação
+- [ ] T846 Criar migration para adicionar submenu de Tipos de Ação
+- [ ] T847 Atualizar formulário de processos (substituir input por select)
+- [ ] T848 Atualizar ProcessosController para carregar `tiposAcaoOptions`
+- [ ] T849 Testar migração de dados em ambiente de teste
+- [ ] T850 Validar não permitir exclusão com processos vinculados
+- [ ] T851 Popular seeders com tipos de ação comuns
+
+**DoD da fase 11.4:**
+- CRUD completo de Tipos de Ação funcional
+- Migração de dados bem-sucedida
+- Formulário de processos usando select de tipos
+- Validações e restrições implementadas
+
+---
+
+### 11.5 Menu - Remover Submenu Andamentos
+
+- [ ] T852 Criar migration para remover registro de `submenu` onde `rota = 'andamentos'`
+- [ ] T853 Remover permissões relacionadas em `perfis_submenu`
+- [ ] T854 Comentar rotas de visualização `/andamentos` em routes/web.php
+- [ ] T855 Manter rotas AJAX (POST) para incluir/alterar andamentos
+- [ ] T856 Buscar e remover/atualizar links diretos para `/andamentos` no código
+- [ ] T857 Testar que funcionalidades AJAX continuam operacionais
+- [ ] T858 Validar menu lateral não exibe mais "Andamentos"
+
+**DoD da fase 11.5:**
+- Submenu Andamentos removido do menu
+- Funcionalidades AJAX mantidas
+- Sem regressões em outras telas
+
+---
+
+### 11.6 Documentos - Coluna de Andamento
+
+- [ ] T859 Adicionar coluna "Andamento" na tabela de documentos (view processos)
+- [ ] T860 Implementar exibição de badge com tipo e data do andamento
+- [ ] T861 Adicionar eager loading `->load('andamento')` para evitar N+1
+- [ ] T862 Implementar exibição "-" quando documento sem andamento
+- [ ] T863 Adicionar coluna na view de listagem de documentos
+- [ ] T864 Testar performance com muitos documentos
+- [ ] T865 Adicionar CSS para badge de andamento
+
+**DoD da fase 11.6:**
+- Coluna de andamento visível em todas as tabelas de documentos
+- Performance otimizada (eager loading)
+- Formatação visual adequada
+
+---
+
+### 11.7 Documentos - Remover "Compartilhar com Cliente"
+
+- [ ] T866 Remover checkbox "Compartilhar com cliente" do formulário em processos
+- [ ] T867 Remover checkbox da view de alteração de documentos
+- [ ] T868 Remover código JavaScript relacionado ao campo
+- [ ] T869 Atualizar controller para definir valor padrão `shared_with_client = true`
+- [ ] T870 Atualizar validação removendo campo do fillable condicional
+- [ ] T871 Testar upload de documentos funciona sem o campo
+- [ ] T872 Validar documentos existentes mantêm seus valores atuais
+
+**DoD da fase 11.7:**
+- Campo removido de todas as interfaces
+- Valor padrão TRUE aplicado em novos uploads
+- Sem regressões em upload/edição
+
+---
+
+### 11.8 Documentos - Preview na Alteração
+
+- [ ] T873 Criar card de informações do documento (nome, tipo, tamanho, versão, data)
+- [ ] T874 Criar card de preview com lógica condicional por tipo de arquivo
+- [ ] T875 Implementar preview inline para imagens (JPG, PNG, GIF)
+- [ ] T876 Implementar preview iframe para PDFs
+- [ ] T877 Implementar fallback para outros tipos (ícone + download)
+- [ ] T878 Criar endpoint GET `/preview-documentos/{id}`
+- [ ] T879 Implementar controller method `preview()` com validação de permissão
+- [ ] T880 Configurar response com Content-Disposition: inline
+- [ ] T881 Adicionar rota do preview com middleware auth
+- [ ] T882 Implementar CSS para cards de preview
+- [ ] T883 Testar preview com diferentes tipos de arquivo
+- [ ] T884 Validar segurança (permissões, path traversal)
+- [ ] T885 Adicionar indicador de loading para arquivos grandes
+
+**DoD da fase 11.8:**
+- Preview funcional para imagens e PDFs
+- Fallback adequado para outros tipos
+- Segurança validada
+- Interface responsiva
+
+---
+
+### 11.9 Testes da Fase 8
+
+- [ ] T886 Criar testes de validação de CPF
+- [ ] T887 Criar testes de busca AJAX de clientes
+- [ ] T888 Criar testes de modais de andamento (inclusão e edição)
+- [ ] T889 Criar testes de CRUD de tipos de ação
+- [ ] T890 Criar testes de migração de dados de tipos de ação
+- [ ] T891 Criar testes de preview de documentos
+- [ ] T892 Executar testes de regressão em clientes, processos e documentos
+- [ ] T893 Validar performance dos endpoints AJAX
+
+**DoD da fase 11.9:**
+- Cobertura de testes para novas funcionalidades
+- Todos os testes passando
+- Sem regressões detectadas
+
+---
+
+## 12. Sequência de Execução - Fase 8 (Melhorias UX)
+
+### Ordem Recomendada:
+
+1. **Rápidas e Independentes** (1-2 dias):
+   - T806: Email opcional
+   - T820-T822: Mover botões CSV/PDF
+   - T852-T858: Remover submenu Andamentos
+   - T866-T872: Remover "Compartilhar com cliente"
+   - T859-T865: Coluna de andamento em documentos
+
+2. **Complexidade Baixa** (2-3 dias):
+   - T801-T810: Campo CPF
+   - T873-T885: Preview de documentos
+
+3. **Complexidade Média** (3-5 dias):
+   - T811-T819: Select2 AJAX
+   - T823-T834: Modais de andamentos
+
+4. **Complexidade Alta** (5-7 dias):
+   - T835-T851: CRUD Tipo de Ação (inclui migration de dados)
+
+5. **Testes e Validação** (2-3 dias):
+   - T886-T893: Testes completos
+
+**Total estimado: 13-20 dias úteis**
+
+---
+
+## 13. Critério de Pronto - Fase 8 (V1.5)
+
+- [ ] Campo CPF funcional com validação completa
+- [ ] Email opcional implementado
+- [ ] Select2 AJAX para clientes operacional
+- [ ] Botões CSV/PDF no rodapé
+- [ ] Modal de novo andamento funcional
+- [ ] Modal de edição de andamento com permissões
+- [ ] CRUD de Tipos de Ação completo
+- [ ] Migração de dados de tipos de ação bem-sucedida
+- [ ] Submenu Andamentos removido
+- [ ] Coluna de andamento em documentos exibida
+- [ ] Campo "Compartilhar com cliente" removido
+- [ ] Preview de documentos funcional
+- [ ] Todos os testes passando
+- [ ] Sem regressões em funcionalidades existentes
+
+---
+
+## Próximo comando
+
+`/speckit.implement`

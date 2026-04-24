@@ -1,0 +1,421 @@
+# SpecKit Constitution - Projeto Juridico
+
+## 📜 Constituição de Padrões de Código e Testes
+
+Este documento define os padrões e diretrizes para o desenvolvimento e testes do projeto Juridico.
+
+---
+
+## 1. Princípios Fundamentais
+
+### 1.1 Qualidade de Código
+- ✅ **Cobertura de Testes:** Mínimo de 80% de cobertura
+- ✅ **Clean Code:** Seguir princípios SOLID
+- ✅ **DRY:** Don't Repeat Yourself
+- ✅ **KISS:** Keep It Simple, Stupid
+
+### 1.2 Padrões de Arquitetura
+- Arquitetura em Camadas (Controllers, Services, Repositories, Models)
+- Separação de responsabilidades
+- Injeção de dependência
+- Repositories para acesso a dados
+
+---
+
+## 2. Padrões PHP/Laravel
+
+### 2.1 Convenções de Nomes
+
+#### Arquivos e Classes
+```
+✓ UserController.php          (PascalCase)
+✓ UserService.php
+✓ UserRepository.php
+✗ user_controller.php         (snake_case)
+✗ user-controller.php         (kebab-case)
+```
+
+#### Variáveis e Métodos
+```php
+// ✓ Correto
+private $userName;
+public function getUserById($id) { }
+private function validateUserEmail($email) { }
+
+// ✗ Incorreto
+private $user_name;
+public function get_user_by_id($id) { }
+```
+
+#### Constantes
+```php
+// ✓ Correto
+const MAX_UPLOAD_SIZE = 5242880; // 5MB
+const DEFAULT_PAGE_SIZE = 20;
+
+// ✗ Incorreto
+const maxUploadSize = 5242880;
+```
+
+### 2.2 Estrutura de Classes
+
+```php
+<?php
+
+namespace App\Services;
+
+use App\Models\User;
+use App\Repositories\UserRepository;
+
+class UserService
+{
+    private UserRepository $repository;
+
+    public function __construct(UserRepository $repository)
+    {
+        $this->repository = $repository;
+    }
+
+    /**
+     * Busca usuário por ID
+     *
+     * @param int $id
+     * @return User|null
+     */
+    public function getById(int $id): ?User
+    {
+        return $this->repository->find($id);
+    }
+
+    /**
+     * Cria novo usuário
+     *
+     * @param array $data
+     * @return User
+     */
+    public function create(array $data): User
+    {
+        $this->validate($data);
+        return $this->repository->create($data);
+    }
+
+    private function validate(array $data): void
+    {
+        // Validação aqui
+    }
+}
+```
+
+### 2.3 Type Hints Obrigatórios
+
+```php
+// ✓ Correto
+public function getUserList(int $page = 1, int $limit = 20): array
+{
+    return $this->repository->paginate($page, $limit);
+}
+
+// ✗ Incorreto
+public function getUserList($page = 1, $limit = 20)
+{
+    return $this->repository->paginate($page, $limit);
+}
+```
+
+---
+
+## 3. Padrões de Testes
+
+### 3.1 Estrutura de Diretórios
+```
+tests/
+├── Feature/          # Testes de integração
+│   ├── UserControllerTest.php
+│   └── PeregrinoServiceTest.php
+├── Unit/            # Testes unitários
+│   ├── UserServiceTest.php
+│   └── ValidatorTest.php
+└── TestCase.php     # Classe base
+```
+
+### 3.2 Convenção de Nomes de Testes
+
+```php
+class UserServiceTest extends TestCase
+{
+    // ✓ Correto - Descreve o comportamento esperado
+    public function test_should_create_user_with_valid_data(): void
+    public function test_should_throw_exception_when_email_invalid(): void
+    public function test_should_return_user_by_id(): void
+
+    // ✗ Incorreto
+    public function testCreateUser(): void
+    public function test_create(): void
+    public function testUser(): void
+}
+```
+
+### 3.3 Estrutura de um Teste
+
+```php
+use PHPUnit\Framework\TestCase;
+
+class UserServiceTest extends TestCase
+{
+    private UserService $service;
+    private UserRepository $repository;
+
+    protected function setUp(): void
+    {
+        parent::setUp();
+        $this->repository = new UserRepository();
+        $this->service = new UserService($this->repository);
+    }
+
+    public function test_should_create_user_with_valid_data(): void
+    {
+        // Arrange (Preparar dados)
+        $userData = [
+            'name' => 'João Silva',
+            'email' => 'joao@example.com',
+            'password' => 'senha123',
+        ];
+
+        // Act (Executar ação)
+        $result = $this->service->create($userData);
+
+        // Assert (Verificar resultado)
+        $this->assertNotNull($result->id);
+        $this->assertEquals('João Silva', $result->name);
+        $this->assertEquals('joao@example.com', $result->email);
+    }
+
+    public function test_should_throw_exception_when_email_invalid(): void
+    {
+        // Arrange
+        $invalidData = [
+            'name' => 'João Silva',
+            'email' => 'invalid-email',
+            'password' => 'senha123',
+        ];
+
+        // Assert & Act
+        $this->expectException(ValidationException::class);
+        $this->service->create($invalidData);
+    }
+}
+```
+
+### 3.4 Anotações e Assertions Comuns
+
+```php
+// Assertions básicas
+$this->assertTrue($condition);
+$this->assertFalse($condition);
+$this->assertNull($value);
+$this->assertNotNull($value);
+$this->assertEquals($expected, $actual);
+$this->assertNotEquals($expected, $actual);
+
+// Assertions para exceções
+$this->expectException(Exception::class);
+$this->expectExceptionMessage('Mensagem esperada');
+
+// Assertions para arrays
+$this->assertArrayHasKey('key', $array);
+$this->assertContains($value, $array);
+$this->assertCount($count, $array);
+
+// Assertions para strings
+$this->assertStringContains('needle', 'haystack');
+```
+
+---
+
+## 4. Padrões de Validação
+
+### 4.1 Validação em Controllers
+
+```php
+class UserController extends Controller
+{
+    public function store(Request $request)
+    {
+        $validated = $request->validate([
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|min:8|confirmed',
+        ]);
+
+        return response()->json($this->userService->create($validated));
+    }
+}
+```
+
+### 4.2 Validação Customizada
+
+```php
+class CreateUserRequest extends FormRequest
+{
+    public function rules(): array
+    {
+        return [
+            'name' => 'required|string|max:255',
+            'email' => 'required|email|unique:users,email',
+            'password' => 'required|min:8|confirmed',
+        ];
+    }
+
+    public function messages(): array
+    {
+        return [
+            'email.unique' => 'Este email já está registrado.',
+            'password.min' => 'A senha deve ter no mínimo 8 caracteres.',
+        ];
+    }
+}
+```
+
+---
+
+## 5. Padrões de Comentários e Documentação
+
+### 5.1 PHPDocblocks
+
+```php
+/**
+ * Busca um usuário pelo ID.
+ *
+ * @param int $id ID do usuário
+ * @return User|null Retorna a instância do usuário ou null se não encontrado
+ * @throws InvalidArgumentException Se o ID é inválido
+ */
+public function getById(int $id): ?User
+{
+    if ($id <= 0) {
+        throw new InvalidArgumentException('ID deve ser um número positivo');
+    }
+    return $this->repository->find($id);
+}
+```
+
+### 5.2 Comentários Inline
+
+```php
+// ✓ Correto - Explica o por quê
+// Aguarda 2 segundos para garantir que o banco de dados foi sincronizado
+sleep(2);
+
+// ✗ Incorreto - Óbvio demais
+// Aguarda 2 segundos
+sleep(2);
+```
+
+---
+
+## 6. Padrões de Erros e Exceções
+
+### 6.1 Tipos de Exceção
+
+```php
+// Use exceções específicas do Laravel
+throw new ModelNotFoundException('Usuário não encontrado');
+throw new AuthorizationException('Não autorizado');
+throw new ValidationException('Dados inválidos');
+throw new TokenMismatchException('Token expirado');
+
+// Para lógica customizada
+throw new \InvalidArgumentException('Argumento inválido');
+throw new \RuntimeException('Erro em tempo de execução');
+```
+
+### 6.2 Tratamento de Erros
+
+```php
+try {
+    $user = $this->userService->getById($id);
+} catch (ModelNotFoundException $e) {
+    return response()->json(['error' => 'Usuário não encontrado'], 404);
+} catch (Exception $e) {
+    report($e);
+    return response()->json(['error' => 'Erro interno do servidor'], 500);
+}
+```
+
+---
+
+## 7. Checklist Pré-Commit
+
+Antes de fazer commit, verifique:
+
+- [ ] Código segue o padrão PSR-12
+- [ ] Todos os métodos têm type hints
+- [ ] Todos os métodos têm PHPDocblocks
+- [ ] Todos os testes passam
+- [ ] Cobertura de testes >= 80%
+- [ ] Sem warnings ou notices do PHP
+- [ ] Variáveis não utilizadas removidas
+- [ ] Comentários desnecessários removidos
+- [ ] Nomes de variáveis e funções são descritivos
+- [ ] Sem hardcoding de valores
+
+---
+
+## 8. Executando Testes
+
+### Executar todos os testes
+```bash
+docker-compose exec -T workspace bash -c "cd /var/www && php artisan test"
+```
+
+### Executar testes com cobertura
+```bash
+docker-compose exec -T workspace bash -c "cd /var/www && php artisan test --coverage"
+```
+
+### Executar testes de um arquivo específico
+```bash
+docker-compose exec -T workspace bash -c "cd /var/www && php artisan test tests/Feature/UserControllerTest.php"
+```
+
+### Executar um teste específico
+```bash
+docker-compose exec -T workspace bash -c "cd /var/www && php artisan test tests/Feature/UserControllerTest.php UserControllerTest::test_should_create_user"
+```
+
+---
+
+## 9. Tools e Linters
+
+### 9.1 PHP Stan
+Análise estática de código
+```bash
+./vendor/bin/phpstan analyse app
+```
+
+### 9.2 PHP CS Fixer
+Formata código automaticamente
+```bash
+./vendor/bin/php-cs-fixer fix app
+```
+
+### 9.3 PHPUnit
+Executor de testes
+```bash
+./vendor/bin/phpunit
+```
+
+---
+
+## 10. Referências
+
+- [PSR-12: Extended Coding Style Guide](https://www.php-fig.org/psr/psr-12/)
+- [Laravel Best Practices](https://laravel.com/docs/best-practices)
+- [PHPUnit Documentation](https://phpunit.de/documentation.html)
+- [SOLID Principles](https://en.wikipedia.org/wiki/SOLID)
+
+---
+
+**Versão:** 1.0
+**Última Atualização:** 30 de março de 2026
+**Mantido por:** Equipe de Desenvolvimento - Projeto Juridico
