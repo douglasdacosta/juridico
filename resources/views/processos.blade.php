@@ -156,7 +156,7 @@
 
                                         <!-- Lista de andamentos existentes -->
                                         <div id="lista-andamentos">
-                                            @forelse($processo->andamentos->sortByDesc('data_andamento') as $andamento)
+                                            @forelse($processo->andamentos->sortByDesc('created_at') as $andamento)
                                                 <div class="mb-3 p-3 border rounded andamento-item" data-id="{{ $andamento->id }}">
                                                     <div class="d-flex justify-content-between align-items-start">
                                                         <div>
@@ -371,6 +371,18 @@
                                                 </div>
                                             </div>
 
+                                            <div class="row">
+                                                <div class="col-md-12">
+                                                    <div class="mb-3">
+                                                        <button type="button" class="btn btn-success" onclick="uploadDocumento(event)">
+                                                            <i class="fas fa-upload"></i> Upload
+                                                        </button>
+                                                        <button type="button" class="btn btn-secondary" onclick="toggleFormDocumento()">
+                                                            <i class="fas fa-times"></i> Cancelar
+                                                        </button>
+                                                    </div>
+                                                </div>
+                                            </div>
 
                                         </div>
                                     </div>
@@ -382,6 +394,7 @@
                                             <th>ID</th>
                                             <th>Arquivo</th>
                                             <th>Versão</th>
+                                            <th>Tipo de Ação</th>
                                             <th>Andamento</th>
                                             <th>Status</th>
                                             <th>Ações</th>
@@ -393,6 +406,9 @@
                                                 <td>{{ $documento->id }}</td>
                                                 <td>{{ $documento->nome_original }}</td>
                                                 <td>v{{ $documento->versao }}</td>
+                                                <td>
+                                                    <span class="badge badge-primary">{{ $processo->tipoAcao?->nome ?? $processo->tipo_acao }}</span>
+                                                </td>
                                                 <td>
                                                     @if($documento->andamento)
                                                         <span class="badge badge-info" title="{{ $documento->andamento->descricao }}">
@@ -451,14 +467,7 @@
                             <input type="hidden" id="edit_processo_id">
                             <div class="mb-3">
                                 <label for="edit_tipo" class="form-label">Tipo <span class="text-danger">*</span></label>
-                                <select class="form-control" id="edit_tipo" name="tipo" required>
-                                    <option value="peticao">Petição</option>
-                                    <option value="audiencia">Audiência</option>
-                                    <option value="decisao">Decisão</option>
-                                    <option value="intimacao">Intimação</option>
-                                    <option value="recurso">Recurso</option>
-                                    <option value="outro">Outro</option>
-                                </select>
+                                <input type="text" class="form-control" id="edit_tipo" name="tipo" placeholder="Ex: Petição, Audiência, Decisão..." required>
                             </div>
                             <div class="mb-3">
                                 <label for="edit_data_andamento" class="form-label">Data <span class="text-danger">*</span></label>
@@ -496,14 +505,7 @@
                     <div class="modal-body">
                         <div class="mb-3">
                             <label for="modal_novo_tipo" class="form-label">Tipo</label>
-                            <select class="form-control" id="modal_novo_tipo" name="novo_tipo" required>
-                                <option value="peticao">Petição</option>
-                                <option value="audiencia">Audiência</option>
-                                <option value="decisao">Decisão</option>
-                                <option value="intimacao">Intimação</option>
-                                <option value="recurso">Recurso</option>
-                                <option value="outro" selected>Outro</option>
-                            </select>
+                            <input type="text" class="form-control" id="modal_novo_tipo" name="novo_tipo" placeholder="Ex: Petição, Audiência, Decisão..." required>
                         </div>
                         <div class="mb-3">
                             <label for="modal_nova_data_andamento" class="form-label">Data</label>

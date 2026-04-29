@@ -67,7 +67,7 @@ return new class extends Migration
         Schema::create('andamentos', function (Blueprint $table) {
             $table->id();
             $table->foreignId('processo_id')->constrained('processos')->cascadeOnDelete();
-            $table->enum('tipo', ['peticao', 'audiencia', 'decisao', 'intimacao', 'recurso', 'outro'])->default('outro');
+            $table->string('tipo', 100)->default('outro');
             $table->date('data_andamento');
             $table->text('descricao');
             $table->foreignId('usuario_id')->constrained('users')->cascadeOnDelete();

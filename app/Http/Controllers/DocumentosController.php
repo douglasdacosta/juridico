@@ -14,7 +14,7 @@ class DocumentosController extends Controller
 {
     public function index(Request $request)
     {
-        $query = Documento::query()->with(['cliente', 'processo', 'andamento', 'usuario']);
+        $query = Documento::query()->with(['cliente', 'processo.tipoAcao', 'andamento', 'usuario']);
 
         if ($request->filled('cliente_id')) {
             $query->where('cliente_id', (int) $request->input('cliente_id'));
@@ -183,6 +183,17 @@ class DocumentosController extends Controller
 
         $documento = Documento::query()->findOrFail((int) $request->input('id'));
 
+        // Andamentos filtrados pelo processo vinculado ao documento
+        $andamentosOptions = collect();
+        if ($documento->processo_id) {
+            $andamentosOptions = Andamento::query()
+                ->where('processo_id', $documento->processo_id)
+                ->orderByDesc('data_andamento')
+                ->orderByDesc('id')
+                ->get()
+                ->mapWithKeys(fn ($a) => [$a->id => '#' . $a->id . ' - ' . ucfirst($a->tipo) . ' (' . $a->data_andamento->format('d/m/Y') . ') - ' . str()->limit($a->descricao, 60)]);
+        }
+
         return view('documentos', [
             'tela' => 'alterar',
             'nome_tela' => 'Documentos',
@@ -190,7 +201,7 @@ class DocumentosController extends Controller
             'documento' => $documento,
             'clientesOptions' => Cliente::query()->orderBy('nome')->pluck('nome', 'id'),
             'processosOptions' => Processo::query()->orderBy('numero_processo')->pluck('numero_processo', 'id'),
-            'andamentosOptions' => Andamento::query()->orderByDesc('id')->pluck('id', 'id'),
+            'andamentosOptions' => $andamentosOptions,
             'documentosBaseOptions' => Documento::query()->where('ativo', true)->orderByDesc('id')->get(),
             'processoRetornoId' => $request->input('processo_retorno_id', $documento->processo_id),
         ]);

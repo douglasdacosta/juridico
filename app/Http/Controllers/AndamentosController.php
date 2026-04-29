@@ -125,6 +125,26 @@ class AndamentosController extends Controller
     }
 
     /**
+     * API endpoint para buscar andamentos de um processo específico
+     */
+    public function porProcesso(int $processoId)
+    {
+        $andamentos = Andamento::query()
+            ->where('processo_id', $processoId)
+            ->orderByDesc('data_andamento')
+            ->orderByDesc('id')
+            ->get()
+            ->map(fn ($a) => [
+                'id' => $a->id,
+                'tipo' => ucfirst($a->tipo),
+                'data_andamento' => $a->data_andamento->format('d/m/Y'),
+                'descricao' => str()->limit($a->descricao, 60),
+            ]);
+
+        return response()->json($andamentos);
+    }
+
+    /**
      * API endpoint para buscar um andamento específico
      */
     public function show(int $id)

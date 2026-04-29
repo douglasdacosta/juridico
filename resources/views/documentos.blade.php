@@ -76,6 +76,7 @@
                                 <th>Versão</th>
                                 <th>Cliente</th>
                                 <th>Processo</th>
+                                <th>Tipo de Ação</th>
                                 <th>Andamento</th>
                                 <th>Status</th>
                                     <th>Ações</th>
@@ -89,6 +90,13 @@
                                     <td>v{{ $documento->versao }}</td>
                                     <td>{{ $documento->cliente->nome ?? '-' }}</td>
                                     <td>{{ $documento->processo->numero_processo ?? '-' }}</td>
+                                    <td>
+                                        @if($documento->processo)
+                                            <span class="badge badge-primary">{{ $documento->processo->tipoAcao?->nome ?? $documento->processo->tipo_acao }}</span>
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
+                                    </td>
                                     <td>
                                         @if($documento->andamento)
                                             <span class="badge badge-info" title="{{ $documento->andamento->descricao }}">
@@ -286,6 +294,28 @@
         $(document).ready(function() {
             $('.mask_numero_processo').mask('0000000-00.0000.0.00.0000');
             inicializarSelect2();
+
+            // Recarregar andamentos ao trocar o processo
+            $('#processo_id').on('change', function() {
+                const processoId = $(this).val();
+                const $andamentoSelect = $('#andamento_id');
+                $andamentoSelect.html('<option value="">Selecione</option>');
+
+                if (!processoId) return;
+
+                $.ajax({
+                    url: '/api/andamentos/por-processo/' + processoId,
+                    method: 'GET',
+                    xhrFields: { withCredentials: true },
+                    success: function(data) {
+                        data.forEach(function(a) {
+                            $andamentoSelect.append(
+                                '<option value="' + a.id + '">#' + a.id + ' - ' + a.tipo + ' (' + a.data_andamento + ') - ' + a.descricao + '</option>'
+                            );
+                        });
+                    }
+                });
+            });
         });
     </script>
 @stop

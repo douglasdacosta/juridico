@@ -13,7 +13,10 @@ class Cliente extends Model
 
     protected $fillable = [
         'nome',
+        'tipo_pessoa',
         'cpf',
+        'cnpj',
+        'socios',
         'email',
         'endereco',
         'numero',
@@ -31,6 +34,7 @@ class Cliente extends Model
     protected $casts = [
         'ativo' => 'boolean',
         'lgpd_consent_at' => 'datetime',
+        'socios' => 'array',
     ];
 
     public function responsaveis()

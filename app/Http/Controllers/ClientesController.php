@@ -71,7 +71,9 @@ class ClientesController extends Controller
             $validated = $request->validate([
                 'id' => 'required|integer',
                 'nome' => 'required|string|max:255',
+                'tipo_pessoa' => 'nullable|in:F,J',
                 'cpf' => 'nullable|string|max:14',
+                'cnpj' => 'nullable|string|max:18',
                 'email' => 'nullable|email|max:255',
                 'status' => 'required|in:A,I',
                 'estado' => 'nullable|string|size:2',
@@ -79,6 +81,10 @@ class ClientesController extends Controller
                 'responsaveis.*' => 'integer|exists:users,id',
                 'lgpd_consent' => 'nullable|boolean',
                 'lgpd_purpose' => 'nullable|string|max:1000',
+                'socios' => 'nullable|array',
+                'socios.*.nome' => 'nullable|string|max:255',
+                'socios.*.cpf' => 'nullable|string|max:14',
+                'socios.*.endereco' => 'nullable|string|max:500',
             ], [
                 'nome.required' => 'O nome é obrigatório.',
                 'email.email' => 'Informe um e-mail válido.',
@@ -94,10 +100,24 @@ class ClientesController extends Controller
                     ->withInput();
             }
 
+            $tipoPessoa = $validated['tipo_pessoa'] ?? 'F';
+            $socios = collect($request->input('socios_nome', []))
+                ->map(fn ($nome, $i) => array_filter([
+                    'nome' => trim((string) ($nome ?? '')),
+                    'cpf' => trim((string) ($request->input('socios_cpf', [])[$i] ?? '')),
+                    'endereco' => trim((string) ($request->input('socios_endereco', [])[$i] ?? '')),
+                ]))
+                ->filter(fn ($s) => ! empty($s['nome']))
+                ->values()
+                ->toArray();
+
             $cliente = Cliente::query()->findOrFail((int) $validated['id']);
             $payload = [
                 'nome' => $validated['nome'],
-                'cpf' => $request->input('cpf'),
+                'tipo_pessoa' => $tipoPessoa,
+                'cpf' => $tipoPessoa === 'F' ? $request->input('cpf') : null,
+                'cnpj' => $tipoPessoa === 'J' ? $request->input('cnpj') : null,
+                'socios' => $tipoPessoa === 'J' && count($socios) ? $socios : null,
                 'email' => $validated['email'],
                 'endereco' => $request->input('endereco'),
                 'numero' => $request->input('numero'),
@@ -141,7 +161,9 @@ class ClientesController extends Controller
         if ($request->isMethod('post')) {
             $validated = $request->validate([
                 'nome' => 'required|string|max:255',
+                'tipo_pessoa' => 'nullable|in:F,J',
                 'cpf' => 'nullable|string|max:14',
+                'cnpj' => 'nullable|string|max:18',
                 'email' => 'nullable|email|max:255',
                 'status' => 'required|in:A,I',
                 'estado' => 'nullable|string|size:2',
@@ -149,6 +171,10 @@ class ClientesController extends Controller
                 'responsaveis.*' => 'integer|exists:users,id',
                 'lgpd_consent' => 'nullable|boolean',
                 'lgpd_purpose' => 'nullable|string|max:1000',
+                'socios' => 'nullable|array',
+                'socios.*.nome' => 'nullable|string|max:255',
+                'socios.*.cpf' => 'nullable|string|max:14',
+                'socios.*.endereco' => 'nullable|string|max:500',
             ], [
                 'nome.required' => 'O nome é obrigatório.',
                 'email.email' => 'Informe um e-mail válido.',
@@ -164,9 +190,23 @@ class ClientesController extends Controller
                     ->withInput();
             }
 
+            $tipoPessoa = $validated['tipo_pessoa'] ?? 'F';
+            $socios = collect($request->input('socios_nome', []))
+                ->map(fn ($nome, $i) => array_filter([
+                    'nome' => trim((string) ($nome ?? '')),
+                    'cpf' => trim((string) ($request->input('socios_cpf', [])[$i] ?? '')),
+                    'endereco' => trim((string) ($request->input('socios_endereco', [])[$i] ?? '')),
+                ]))
+                ->filter(fn ($s) => ! empty($s['nome']))
+                ->values()
+                ->toArray();
+
             $cliente = Cliente::query()->create([
                 'nome' => $validated['nome'],
-                'cpf' => $request->input('cpf'),
+                'tipo_pessoa' => $tipoPessoa,
+                'cpf' => $tipoPessoa === 'F' ? $request->input('cpf') : null,
+                'cnpj' => $tipoPessoa === 'J' ? $request->input('cnpj') : null,
+                'socios' => $tipoPessoa === 'J' && count($socios) ? $socios : null,
                 'email' => $validated['email'],
                 'endereco' => $request->input('endereco'),
                 'numero' => $request->input('numero'),

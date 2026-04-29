@@ -130,17 +130,90 @@
         @endif
             @csrf
             <div class="form-group row">
+                <label class="col-sm-2 col-form-label">Tipo de Pessoa</label>
+                <div class="col-sm-6 pt-2">
+                    @php $tipoPessoa = old('tipo_pessoa', $clientes[0]->tipo_pessoa ?? 'F'); @endphp
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="tipo_pessoa" id="tipo_pf" value="F"
+                            {{ $tipoPessoa === 'F' ? 'checked' : '' }}>
+                        <label class="form-check-label" for="tipo_pf">Pessoa Física (CPF)</label>
+                    </div>
+                    <div class="form-check form-check-inline">
+                        <input class="form-check-input" type="radio" name="tipo_pessoa" id="tipo_pj" value="J"
+                            {{ $tipoPessoa === 'J' ? 'checked' : '' }}>
+                        <label class="form-check-label" for="tipo_pj">Pessoa Jurídica (CNPJ)</label>
+                    </div>
+                </div>
+            </div>
+
+            <div class="form-group row">
                 <label for="nome" class="col-sm-2 col-form-label">Nome</label>
                 <div class="col-sm-4">
                 <input type="text" class="form-control is-invalid" required id="nome" name="nome" value="{{ old('nome', $clientes[0]->nome ?? '') }}">
                 </div>
             </div>
 
-            <div class="form-group row">
+            {{-- CPF - Pessoa Física --}}
+            <div class="form-group row" id="bloco_cpf">
                 <label for="cpf" class="col-sm-2 col-form-label">CPF <small>(opcional)</small></label>
                 <div class="col-sm-2">
                 <input type="text" class="form-control mask_cpf @error('cpf') is-invalid @enderror" id="cpf" name="cpf" value="{{ old('cpf', $clientes[0]->cpf ?? '') }}">
                 @error('cpf')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                </div>
+            </div>
+
+            {{-- CNPJ + Sócios - Pessoa Jurídica --}}
+            <div id="bloco_pj">
+                <div class="form-group row">
+                    <label for="cnpj" class="col-sm-2 col-form-label">CNPJ <small>(opcional)</small></label>
+                    <div class="col-sm-3">
+                        <input type="text" class="form-control mask_cnpj @error('cnpj') is-invalid @enderror" id="cnpj" name="cnpj" value="{{ old('cnpj', $clientes[0]->cnpj ?? '') }}">
+                        @error('cnpj')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                    </div>
+                </div>
+
+                <div class="form-group row">
+                    <div class="col-sm-12">
+                        <h6 class="mb-2">Sócios / Representantes <small class="text-muted">(opcional)</small></h6>
+                        <table class="table table-sm table-bordered" id="tabela_socios">
+                            <thead class="thead-light">
+                                <tr>
+                                    <th>Nome do Sócio</th>
+                                    <th>CPF do Sócio</th>
+                                    <th>Endereço do Sócio</th>
+                                    <th style="width:60px"></th>
+                                </tr>
+                            </thead>
+                            <tbody id="socios_tbody">
+                                @php
+                                    $sociosExistentes = old('socios_nome')
+                                        ? array_map(null,
+                                            old('socios_nome', []),
+                                            old('socios_cpf', []),
+                                            old('socios_endereco', []))
+                                        : ($clientes[0]->socios ?? []);
+                                @endphp
+                                @forelse ($sociosExistentes as $socio)
+                                <tr>
+                                    <td><input type="text" class="form-control form-control-sm" name="socios_nome[]" value="{{ is_array($socio) ? ($socio['nome'] ?? '') : '' }}" maxlength="255"></td>
+                                    <td><input type="text" class="form-control form-control-sm mask_cpf_socio" name="socios_cpf[]" value="{{ is_array($socio) ? ($socio['cpf'] ?? '') : '' }}" maxlength="14"></td>
+                                    <td><input type="text" class="form-control form-control-sm" name="socios_endereco[]" value="{{ is_array($socio) ? ($socio['endereco'] ?? '') : '' }}" maxlength="500"></td>
+                                    <td class="text-center"><button type="button" class="btn btn-sm btn-danger btn-remover-socio">&#10005;</button></td>
+                                </tr>
+                                @empty
+                                <tr>
+                                    <td><input type="text" class="form-control form-control-sm" name="socios_nome[]" maxlength="255"></td>
+                                    <td><input type="text" class="form-control form-control-sm mask_cpf_socio" name="socios_cpf[]" maxlength="14"></td>
+                                    <td><input type="text" class="form-control form-control-sm" name="socios_endereco[]" maxlength="500"></td>
+                                    <td class="text-center"><button type="button" class="btn btn-sm btn-danger btn-remover-socio">&#10005;</button></td>
+                                </tr>
+                                @endforelse
+                            </tbody>
+                        </table>
+                        <button type="button" class="btn btn-sm btn-secondary" id="btn_add_socio">
+                            + Adicionar Sócio
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -261,6 +334,44 @@
         $(document).ready(function() {
             $('.mask_numero_processo').mask('0000000-00.0000.0.00.0000');
             $('.mask_cpf').mask('000.000.000-00');
+            $('.mask_cnpj').mask('00.000.000/0000-00');
+            $('.mask_cpf_socio').mask('000.000.000-00');
+
+            function atualizarTipoPessoa() {
+                var tipo = $('input[name="tipo_pessoa"]:checked').val();
+                if (tipo === 'J') {
+                    $('#bloco_cpf').hide();
+                    $('#bloco_pj').show();
+                } else {
+                    $('#bloco_cpf').show();
+                    $('#bloco_pj').hide();
+                }
+            }
+
+            $('input[name="tipo_pessoa"]').on('change', atualizarTipoPessoa);
+            atualizarTipoPessoa();
+
+            // Adicionar linha de sócio
+            $('#btn_add_socio').on('click', function() {
+                var row = '<tr>' +
+                    '<td><input type="text" class="form-control form-control-sm" name="socios_nome[]" maxlength="255"></td>' +
+                    '<td><input type="text" class="form-control form-control-sm mask_cpf_socio" name="socios_cpf[]" maxlength="14"></td>' +
+                    '<td><input type="text" class="form-control form-control-sm" name="socios_endereco[]" maxlength="500"></td>' +
+                    '<td class="text-center"><button type="button" class="btn btn-sm btn-danger btn-remover-socio">&#10005;</button></td>' +
+                    '</tr>';
+                $('#socios_tbody').append(row);
+                $('#socios_tbody .mask_cpf_socio').last().mask('000.000.000-00');
+            });
+
+            // Remover linha de sócio
+            $(document).on('click', '.btn-remover-socio', function() {
+                var tbody = $('#socios_tbody');
+                if (tbody.find('tr').length > 1) {
+                    $(this).closest('tr').remove();
+                } else {
+                    $(this).closest('tr').find('input').val('');
+                }
+            });
         });
     </script>
 @stop

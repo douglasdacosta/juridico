@@ -29,7 +29,7 @@ class UpdateAndamentosRequest extends FormRequest
 
         return [
             'processo_id' => 'required|exists:processos,id',
-            'tipo' => 'required|in:peticao,audiencia,decisao,intimacao,recurso,outro',
+            'tipo' => 'required|string|max:100',
             'data_andamento' => 'required|date',
             'descricao' => 'required|string',
             'usuario_id' => 'required|exists:users,id',

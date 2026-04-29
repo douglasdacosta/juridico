@@ -194,6 +194,7 @@ Route::post('/resetar-senha-usuarios', [App\Http\Controllers\UsuariosController:
     ->middleware('auth');
 
 // API Routes com sessão (movido de routes/api.php para ter middleware 'web' com sessão)
+Route::get('/api/andamentos/por-processo/{processoId}', [App\Http\Controllers\AndamentosController::class, 'porProcesso'])->name('api.andamentos.por-processo')->middleware('auth');
 Route::get('/api/andamentos/{id}', [App\Http\Controllers\AndamentosController::class, 'show'])->name('api.andamentos.show')->middleware('auth');
 Route::get('/api/clientes/search', [App\Http\Controllers\ClientesController::class, 'apiSearch'])->name('api.clientes.search')->middleware('auth');
 Route::get('/api/filiais/search', [App\Http\Controllers\FiliaisController::class, 'apiSearch'])->name('api.filiais.search')->middleware('auth');

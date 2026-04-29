@@ -211,7 +211,7 @@ CREATE TABLE processo_cliente (
 - **Campos:**
   - Processo *(seleção obrigatória)*
   - Data do andamento
-  - Tipo *(petição, audiência, decisão, intimação, etc.)*
+  - Tipo *(campo de texto livre)*
   - Descrição detalhada
   - Responsável *(usuário que registrou)*
   - Possibilidade de anexar arquivos
@@ -221,11 +221,26 @@ CREATE TABLE processo_cliente (
 - Agrupamento por data
 - Exibição de arquivo anexado (se houver)
 - Quem registrou e quando
+- Badge com tipo de andamento e data
 
 #### 4.1.3 Edição e Exclusão
 - Edição: Apenas criador ou administrador
 - Exclusão: Apenas administrador (com marca de auditoria)
 - Registro de alterações
+
+#### 4.1.4 Inclusão de Documentos por Tipo de Ação
+- **Petição:** Petição inicial, Petição aditiva, Petição simples, Documentos complementares
+- **Audiência:** Edital de audiência, Parecer, Manifestação de audiência, Ata de audiência
+- **Decisão:** Sentença, Acórdão, Parecer, Decisão monocrática, Despacho
+- **Intimação:** Citação/Notificação, Mandado de intimação, Edital de citação
+- **Recurso:** Peça recursal, Agravo, Embargos, Contrarrazões
+- **Outro:** Documentos complementares, Protocolos, Correspondências, Pareceres técnicos
+
+#### 4.1.5 Timeline de Andamento com Documentos
+- Exibição de andamento com documents anexados
+- Visualização direta de PDF/imagens
+- Download de múltiplas versões
+- Histórico de documentação por andamento
 
 ### 4.2 Modelo de Dados - Andamentos
 
@@ -233,7 +248,7 @@ CREATE TABLE processo_cliente (
 CREATE TABLE andamentos (
     id INT PRIMARY KEY AUTO_INCREMENT,
     processo_id INT NOT NULL,
-    tipo ENUM('peticao', 'audiencia', 'decisao', 'intimacao', 'recurso', 'outro') NOT NULL,
+    tipo VARCHAR(100) NOT NULL,
     data_andamento DATE NOT NULL,
     descricao TEXT NOT NULL,
     usuario_id INT NOT NULL,
@@ -243,6 +258,31 @@ CREATE TABLE andamentos (
     FOREIGN KEY (usuario_id) REFERENCES users(id)
 );
 ```
+
+**Notas:**
+- Campo `tipo` é de texto livre (VARCHAR) para permitir digitação de qualquer andamento
+- Exemplos: "Petição", "Audiência", "Decisão", "Intimação", "Recurso", etc.
+- Permite flexibilidade para tipos customizados
+
+### 4.3 Associação de Documentos a Andamentos
+
+- **Relacionamento:** 1 Andamento pode ter N Documentos
+- **Vinculation:** Através do campo `andamento_id` na tabela `documentos`
+- **Cascata:** Documentos removidos logicamente se andamento for excluído
+- **Display:** Coluna "Tipo de Ação" sempre aparece nos documentos (vem do processo, não do andamento)
+- **Filtros:** Permitir visualização de documentos por tipo de andamento
+
+### 4.4 Exibição de Documentos Vinculados
+
+**Na tela de detalhes do processo:**
+- Tabela com colunas: ID | Arquivo | Versão | **Tipo de Ação** | Andamento | Status | Ações
+- Tipo de Ação mostra `processo.tipo_acao` (sempre preenchido)
+- Andamento mostra badge com tipo e data (opcional)
+
+**Na tela de listagem geral de documentos:**
+- Tabela com colunas: ID | Arquivo | Versão | Cliente | Processo | **Tipo de Ação** | Andamento | Status | Ações
+- Tipo de Ação mostra `processo.tipo_acao` quando documento vinculado a processo
+- Tipo de Ação mostra "-" quando documento não tem processo vinculado
 
 ---
 
@@ -260,6 +300,45 @@ CREATE TABLE andamentos (
   ├── processos/{id}/
   └── andamentos/{id}/
   ```
+
+#### 5.1.1.1 Documentos por Tipo de Andamento
+- **Petição:**
+  * Petição inicial ou aditiva
+  * Petição simples
+  * Documentos anexados à petição
+  * Comprovante de protocolo
+
+- **Audiência:**
+  * Edital/Notificação de audiência
+  * Manifestação de parte
+  * Ata de audiência realizada
+  * Parecer técnico apresentado
+
+- **Decisão:**
+  * Sentença/Despacho
+  * Acórdão
+  * Decisão monocrática
+  * Parecer técnico
+  * Fundamentação legal
+
+- **Intimação:**
+  * Citação/Notificação
+  * Mandado de intimação
+  * Edital de citação
+  * Comprovante de entrega
+
+- **Recurso:**
+  * Peça recursal
+  * Agravo (se aplicável)
+  * Embargos (se aplicável)
+  * Contrarrazões
+  * Documentação complementar
+
+- **Outro:**
+  * Documentos complementares diversos
+  * Correspondências anexadas
+  * Protocolos adicionais
+  * Anexos diversos
 
 #### 5.1.2 Organização
 - **Por Cliente:** Documentos associados ao cliente
@@ -350,6 +429,27 @@ CREATE TABLE documentos (
 - 1 Andamento pode ter N Documentos
 - 1 Cliente pode ter N Documentos
 
+### 7.3 Documentação Obrigatória por Tipo de Andamento
+
+| Tipo de Andamento | Documento Obrigatório | Documentos Complementares | Status |
+|------|-----|-----|---|
+| **Petição** | Sim - Petição ou Documentos da petição | Comprovante de protocolo | Recomendado |
+| **Audiência** | Sim - Edital ou Notificação | Ata, Parecer, Manifesto | Recomendado |
+| **Decisão** | Sim - Sentença ou Acórdão | Fundamentação, Parecer técnico | Obrigatório |
+| **Intimação** | Sim - Citação ou Notificação | Mandado de entrega | Recomendado |
+| **Recurso** | Sim - Peça recursal | Contrarrazões, Agravo, Embargos | Recomendado |
+| **Outro** | Opcional | Qualquer documento complementar | Opcional |
+
+### 7.4 Validações de Documento por Andamento
+
+| Regra | Descrição | Ação |
+|-------|-----------|------|
+| Documento em andamento | Todo andamento deve ter ≥1 documento (exceto "Outro") | Aviso/Notificação |
+| Tipo de arquivo adequado | Validar MIME type compatível | Erro 415 |
+| Nomenclatura automática | Incluir tipo de andamento no nome | Log do sistema |
+| Versionamento | Manter histórico de versões | Nova versão ao upload |
+| Auditoria de documento | Registrar quem enviou e quando | Campo no BD |
+
 ---
 
 ## 8. Fluxos de Uso
@@ -394,6 +494,37 @@ CREATE TABLE documentos (
 5. Armazena em pasta estruturada
 6. Registra no banco de dados
 7. Disponibiliza para download/visualização
+```
+
+### 8.4 Fluxo: Upload de Documento em Andamento
+
+```
+1. Advogado visualiza processo
+2. Clica em "Novo Andamento"
+3. Define tipo (Petição, Audiência, Decisão, Intimação, Recurso, Outro)
+4. Adiciona descrição
+5. Anexa documento(s) correspondente(s):
+   - Sistema sugere tipos de documento baseado no tipo de andamento
+   - Valida compatibilidade de documento com andamento
+6. Clica "Salvar Andamento"
+7. Sistema:
+   - Cria registro de andamento
+   - Armazena documento(s) em pasta de andamento
+   - Registra auditoria (usuário, data, hora)
+   - Exibe documento em timeline
+```
+
+### 8.5 Fluxo: Visualizar Documentos de Andamento
+
+```
+1. Advogado acessa timeline do processo
+2. Localiza andamento específico
+3. Visualiza documentos anexados:
+   - PDF: Preview embutido
+   - Imagens: Galeria visual
+   - Outros: Ícone + botão download
+4. Pode baixar versões anteriores
+5. Acessa histórico de quem enviou e quando
 ```
 
 ---
@@ -592,7 +723,36 @@ CREATE TABLE tipos_acao (
 
 ### 11.5 Documentos - Melhorias
 
-#### 11.5.1 Coluna de Andamento Vinculado
+#### 11.5.1 Documentos Vinculados a Andamentos
+- **Objetivo:** Associar documentos específicos aos tipos de andamento
+- **Tipos de Documentos por Andamento:**
+  * **Petição:** Petição inicial, Petição aditiva, Documentos anexados, Protocolo
+  * **Audiência:** Edital de audiência, Ata de audiência, Parecer, Manifesto
+  * **Decisão:** Sentença, Acórdão, Despacho, Parecer técnico
+  * **Intimação:** Citação, Mandado de intimação, Edital de citação
+  * **Recurso:** Peça recursal, Agravo, Embargos, Contrarrazões
+  * **Outro:** Documentos diversos
+
+- **Implementação:**
+  - Campos em formulário de novo andamento
+  - Drag-drop para múltiplos arquivos
+  - Preview durante upload
+  - Validação de tipo de documento x tipo de andamento
+  - Armazenamento em pasta específica: `storage/documents/andamentos/{andamento_id}/`
+
+- **Exibição na Timeline:**
+  - Cards de andamento mostrando documentos anexados
+  - Badge com tipo de documento
+  - Links para download/visualização
+  - Ícones representativos por tipo
+
+- **Segurança:**
+  - Validação de permissões (apenas criador/admin pode editar)
+  - Versionamento automático
+  - Auditoria de downloads
+  - Antivírus scan (futuro)
+
+#### 11.5.2 Coluna de Andamento Vinculado
 - **Objetivo:** Mostrar contexto do documento
 - **Implementação:**
   - Adicionar coluna "Andamento" na tabela de documentos
@@ -604,7 +764,7 @@ CREATE TABLE tipos_acao (
   - Eager loading: `$documentos->load('andamento')`
   - Evitar N+1 queries
 
-#### 11.5.2 Remover "Compartilhar com Cliente"
+#### 11.5.3 Remover "Compartilhar com Cliente"
 - **Decisão:** Campo removido das telas de upload
 - **Valor padrão:** TRUE (sempre compartilhado)
 - **Justificativa:** Simplificação da interface, alinhado com transparência
@@ -615,7 +775,7 @@ CREATE TABLE tipos_acao (
   - Definir valor padrão no controller
   - Manter campo no banco (future-proof)
 
-#### 11.5.3 Preview de Documentos
+#### 11.5.4 Preview de Documentos
 - **Objetivo:** Mostrar claramente qual documento está sendo editado
 
 - **Elementos da Tela de Alteração:**
@@ -645,7 +805,36 @@ CREATE TABLE tipos_acao (
 
 ---
 
-## 12. Roadmap Futuro (V2.0)
+### 11.6 Andamentos - Campo Tipo Flexível
+
+#### 11.6.1 Mudança de Estrutura
+- **Antes:** Campo `tipo` era ENUM com opções fixas (petição, audiência, decisão, intimação, recurso, outro)
+- **Depois:** Campo `tipo` é VARCHAR(100) de texto livre
+- **Motivo:** Maior flexibilidade para tipos customizados de andamentos
+
+#### 11.6.2 Implementação
+- **Modal de Novo Andamento:**
+  * Campo "Tipo" agora é input de texto
+  * Placeholder: "Ex: Petição, Audiência, Decisão..."
+  * Aceita qualquer valor digitado pelo usuário
+
+- **Modal de Editar Andamento:**
+  * Campo "Tipo" agora é input de texto
+  * Placeholder: "Ex: Petição, Audiência, Decisão..."
+  * Pré-preenchido com o tipo existente
+
+- **Validação:**
+  * Campo obrigatório
+  * Sem limite de comprimento (próximo de 100 caracteres)
+  * Sem validação de formato específico
+
+#### 11.6.3 Exibição
+- Timeline de andamentos mostra o tipo digitado como badge
+- Listagem de documentos mostra o tipo do andamento (se vinculado)
+
+---
+
+## 13. Roadmap Futuro (V2.0)
 
 - [ ] Notificações por email/SMS de andamentos
 - [ ] Integração com Apis de tribunais
@@ -659,7 +848,7 @@ CREATE TABLE tipos_acao (
 
 ---
 
-## 12. Recursos Técnicos
+## 14. Recursos Técnicos
 
 | Camada | Tecnologia |
 |--------|------------|
