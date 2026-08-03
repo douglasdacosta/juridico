@@ -81,6 +81,30 @@ Route::get('/exportar-processos-pdf', [App\Http\Controllers\ProcessosController:
     ->name('exportar-processos-pdf')
     ->middleware('auth');
 
+Route::match(['get', 'post'], '/financeiro', [App\Http\Controllers\FinanceiroController::class, 'index'])
+    ->name('financeiro')
+    ->middleware('auth', 'afterAuth:financeiro');
+
+Route::match(['get', 'post'], '/alterar-financeiro', [App\Http\Controllers\FinanceiroController::class, 'alterar'])
+    ->name('alterar-financeiro')
+    ->middleware('auth', 'afterAuth:financeiro');
+
+Route::match(['get', 'post'], '/incluir-financeiro', [App\Http\Controllers\FinanceiroController::class, 'incluir'])
+    ->name('incluir-financeiro')
+    ->middleware('auth', 'afterAuth:financeiro');
+
+Route::post('/excluir-financeiro', [App\Http\Controllers\FinanceiroController::class, 'excluir'])
+    ->name('excluir-financeiro')
+    ->middleware('auth', 'afterAuth:financeiro');
+
+Route::post('/financeiro/parcela/pagar', [App\Http\Controllers\FinanceiroController::class, 'pagarParcela'])
+    ->name('financeiro.parcela.pagar')
+    ->middleware('auth', 'afterAuth:financeiro');
+
+Route::post('/financeiro/pagar', [App\Http\Controllers\FinanceiroController::class, 'pagarLancamento'])
+    ->name('financeiro.pagar')
+    ->middleware('auth', 'afterAuth:financeiro');
+
 // Rota de listagem de andamentos removida - andamentos são gerenciados dentro dos processos
 // Route::match(['get', 'post'], '/andamentos', [App\Http\Controllers\AndamentosController::class, 'index'])
 //     ->name('andamentos')
@@ -199,4 +223,5 @@ Route::get('/api/andamentos/{id}', [App\Http\Controllers\AndamentosController::c
 Route::get('/api/clientes/search', [App\Http\Controllers\ClientesController::class, 'apiSearch'])->name('api.clientes.search')->middleware('auth');
 Route::get('/api/filiais/search', [App\Http\Controllers\FiliaisController::class, 'apiSearch'])->name('api.filiais.search')->middleware('auth');
 Route::get('/api/tipos-acao/search', [App\Http\Controllers\TipoAcaoController::class, 'apiSearch'])->name('api.tipos-acao.search')->middleware('auth');
+Route::get('/api/processos/search', [App\Http\Controllers\ProcessosController::class, 'apiSearch'])->name('api.processos.search')->middleware('auth');
 Route::get('/api/usuarios/search', [App\Http\Controllers\UsuariosController::class, 'apiSearch'])->name('api.usuarios.search')->middleware('auth');

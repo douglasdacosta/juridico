@@ -59,4 +59,10 @@ class Processo extends Model
     {
         return $this->belongsTo(TipoAcao::class, 'tipo_acao');
     }
+
+    public function financeiros()
+    {
+        return $this->belongsToMany(Financeiro::class, 'financeiro_processo', 'processo_id', 'financeiro_id')
+            ->withTimestamps();
+    }
 }

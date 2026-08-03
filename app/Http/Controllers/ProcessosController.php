@@ -27,6 +27,45 @@ class ProcessosController extends Controller
         ]);
     }
 
+    /**
+     * API endpoint para Select2 - busca processos com paginação, opcionalmente filtrado por cliente
+     */
+    public function apiSearch(Request $request)
+    {
+        $search = trim((string) $request->input('q', ''));
+        $clienteId = $request->input('cliente_id');
+        $page = max(1, (int) $request->input('page', 1));
+        $perPage = 10;
+
+        $query = Processo::query()->orderByDesc('id');
+
+        if ($clienteId) {
+            $query->whereHas('clientes', fn ($q) => $q->where('clientes.id', (int) $clienteId));
+        }
+
+        if ($search !== '') {
+            $query->where('numero_processo', 'like', "%{$search}%");
+        }
+
+        $total = $query->count();
+        $processos = $query
+            ->skip(($page - 1) * $perPage)
+            ->take($perPage)
+            ->get(['id', 'numero_processo']);
+
+        $results = $processos->map(fn ($processo) => [
+            'id' => $processo->id,
+            'text' => $processo->numero_processo,
+        ]);
+
+        return response()->json([
+            'results' => $results,
+            'pagination' => [
+                'more' => ($page * $perPage) < $total,
+            ],
+        ]);
+    }
+
     public function exportCsv(Request $request)
     {
         $processos = $this->baseQuery($request)->orderByDesc('id')->get();

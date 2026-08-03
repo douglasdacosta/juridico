@@ -13,7 +13,7 @@ Sistema: **Laravel 9** | PHP **8.0+** | MySQL | Node.js
 | MySQL | 8.0 | https://dev.mysql.com/downloads/installer/ |
 | Node.js | 18 LTS | https://nodejs.org/ |
 | Git | qualquer | https://git-scm.com/download/win |
-| IIS ou Apache | — | ver seção abaixo |
+| Nginx | 1.24+ | https://nginx.org/en/download.html |
 
 ---
 
@@ -106,19 +106,19 @@ npm -v
 
 Copie os arquivos do projeto para o servidor, por exemplo em:
 ```
-C:\inetpub\wwwroot\juridico
+C:\nginx\www\juridico
 ```
 
 Ou via Git:
 ```cmd
-git clone <URL_DO_REPOSITORIO> C:\inetpub\wwwroot\juridico
-cd C:\inetpub\wwwroot\juridico
+git clone <URL_DO_REPOSITORIO> C:\nginx\www\juridico
+cd C:\nginx\www\juridico
 ```
 
 ### 5.2 Instalar dependências PHP
 
 ```cmd
-cd C:\inetpub\wwwroot\juridico
+cd C:\nginx\www\juridico
 composer install --no-dev --optimize-autoloader
 ```
 
@@ -185,11 +185,11 @@ php artisan vendor:publish --provider="JeroenNoten\LaravelAdminLte\ServiceProvid
 
 ### 5.8 Configurar permissões de pastas
 
-O usuário do servidor web (IIS: `IIS_IUSRS` / Apache: o usuário do serviço) precisa de permissão de **escrita** nas pastas:
+O usuário sob o qual o Nginx executa (geralmente `SYSTEM` ou o usuário configurado no `nginx.conf`) precisa de permissão de **escrita** nas pastas:
 
 ```cmd
-icacls "C:\inetpub\wwwroot\juridico\storage" /grant "IIS_IUSRS:(OI)(CI)F" /T
-icacls "C:\inetpub\wwwroot\juridico\bootstrap\cache" /grant "IIS_IUSRS:(OI)(CI)F" /T
+icacls "C:\nginx\www\juridico\storage" /grant "Everyone:(OI)(CI)F" /T
+icacls "C:\nginx\www\juridico\bootstrap\cache" /grant "Everyone:(OI)(CI)F" /T
 ```
 
 ### 5.9 Otimizar para produção
@@ -202,68 +202,101 @@ php artisan view:cache
 
 ---
 
-## 6. Configuração do Servidor Web
+## 6. Configuração do Servidor Web — Nginx
 
-### Opção A — IIS (Internet Information Services)
+### 6.1 Instalar o Nginx
 
-1. Habilite o IIS via **Painel de Controle → Ativar ou desativar recursos do Windows**:
-   - Web Server (IIS) → Application Development → CGI
+1. Baixe o Nginx para Windows (versão **Stable**) em https://nginx.org/en/download.html
+2. Extraia para `C:\nginx`
+3. Copie os arquivos do projeto para `C:\nginx\www\juridico` (ou ajuste o caminho conforme preferir)
+4. Inicie o Nginx para testar:
+```cmd
+cd C:\nginx
+nginx.exe
+```
+5. Acesse `http://localhost` — se aparecer a página padrão do Nginx, a instalação está correta
+6. Para parar: `nginx.exe -s stop`
 
-2. Instale o **PHP Manager for IIS**: https://www.iis.net/downloads/community/2018/05/php-manager-150-for-iis-10
+### 6.2 Configurar o PHP-FPM (FastCGI)
 
-3. No IIS Manager:
-   - Adicione o PHP como FastCGI: **PHP Manager → Register new PHP version** → aponte para `C:\php\php-cgi.exe`
+O Nginx não executa PHP diretamente — ele usa o PHP via FastCGI.
 
-4. Crie um novo **Site** apontando para `C:\inetpub\wwwroot\juridico\public`
-
-5. Crie o arquivo `C:\inetpub\wwwroot\juridico\public\web.config`:
-
-```xml
-<?xml version="1.0" encoding="UTF-8"?>
-<configuration>
-  <system.webServer>
-    <rewrite>
-      <rules>
-        <rule name="Laravel" stopProcessing="true">
-          <match url="^(.*)$" ignoreCase="false" />
-          <conditions logicalGrouping="MatchAll">
-            <add input="{REQUEST_FILENAME}" matchType="IsFile" ignoreCase="false" negate="true" />
-            <add input="{REQUEST_FILENAME}" matchType="IsDirectory" ignoreCase="false" negate="true" />
-          </conditions>
-          <action type="Rewrite" url="index.php" appendQueryString="true" />
-        </rule>
-      </rules>
-    </rewrite>
-    <httpErrors errorMode="Detailed" />
-  </system.webServer>
-</configuration>
+1. No arquivo `C:\php\php.ini`, certifique-se que está habilitado:
+```ini
+extension=php_fpm
 ```
 
-6. Instale o módulo **URL Rewrite** do IIS: https://www.iis.net/downloads/microsoft/url-rewrite
-
-### Opção B — Apache (XAMPP / Apache Lounge)
-
-1. Baixe o Apache para Windows em https://www.apachelounge.com/download/
-2. Configure o Virtual Host em `httpd-vhosts.conf`:
-
-```apache
-<VirtualHost *:80>
-    ServerName seu-dominio-ou-ip
-    DocumentRoot "C:/inetpub/wwwroot/juridico/public"
-
-    <Directory "C:/inetpub/wwwroot/juridico/public">
-        AllowOverride All
-        Require all granted
-    </Directory>
-</VirtualHost>
+2. Inicie o PHP em modo FastCGI (abra um Prompt de Comando e deixe rodando):
+```cmd
+C:\php\php-cgi.exe -b 127.0.0.1:9000
 ```
 
-3. Certifique-se de que `mod_rewrite` está habilitado no `httpd.conf`:
-```apache
-LoadModule rewrite_module modules/mod_rewrite.so
+> **Dica:** Para rodar como serviço Windows, use o [NSSM](https://nssm.cc/download) (Non-Sucking Service Manager):
+> ```cmd
+> nssm install PHP-CGI "C:\php\php-cgi.exe" "-b 127.0.0.1:9000"
+> nssm start PHP-CGI
+> ```
+
+### 6.3 Configurar o Virtual Host do Laravel
+
+Edite `C:\nginx\conf\nginx.conf` e substitua o bloco `server {}` padrão (ou adicione ao final, dentro do bloco `http {}`):
+
+```nginx
+server {
+    listen 80;
+    server_name seu-dominio-ou-ip;
+
+    root C:/nginx/www/juridico/public;
+    index index.php index.html;
+
+    charset utf-8;
+
+    location / {
+        try_files $uri $uri/ /index.php?$query_string;
+    }
+
+    location = /favicon.ico { access_log off; log_not_found off; }
+    location = /robots.txt  { access_log off; log_not_found off; }
+
+    error_page 404 /index.php;
+
+    location ~ \.php$ {
+        fastcgi_pass   127.0.0.1:9000;
+        fastcgi_index  index.php;
+        fastcgi_param  SCRIPT_FILENAME $realpath_root$fastcgi_script_name;
+        include        fastcgi_params;
+    }
+
+    location ~ /\.(?!well-known).* {
+        deny all;
+    }
+}
 ```
 
-4. Verifique que o arquivo `.htaccess` existe em `public/` (gerado pelo Laravel por padrão).
+### 6.4 Recarregar o Nginx
+
+Após salvar o arquivo de configuração:
+
+```cmd
+cd C:\nginx
+nginx.exe -t          # testa a sintaxe da configuração
+nginx.exe -s reload   # aplica sem derrubar o serviço
+```
+
+### 6.5 Configurar o Nginx como serviço Windows (opcional, recomendado)
+
+Usando o NSSM:
+
+```cmd
+nssm install Nginx "C:\nginx\nginx.exe"
+nssm set Nginx AppDirectory C:\nginx
+nssm start Nginx
+```
+
+Para iniciar automaticamente com o Windows:
+```cmd
+sc config Nginx start= auto
+```
 
 ---
 
@@ -297,9 +330,9 @@ Checklist:
 | Erro 500 | `.env` não configurado ou extensão PHP faltando | Checar `storage/logs/laravel.log` |
 | Página em branco | `APP_DEBUG=false` esconde erros | Temporariamente setar `APP_DEBUG=true` |
 | Assets não carregam | `npm run build` não executado | Executar `npm run build` novamente |
-| Permissão negada | IIS sem escrita em `storage/` | Rever passo 5.8 |
+| Permissão negada | Nginx sem escrita em `storage/` | Rever passo 5.8 |
 | `php_openssl` faltando | Extensão não habilitada no `php.ini` | Habilitar `extension=openssl` |
-| Rewrite não funciona no IIS | Módulo URL Rewrite não instalado | Instalar URL Rewrite Module |
+| Nginx retorna 502 Bad Gateway | PHP-CGI não está rodando | Iniciar `php-cgi.exe -b 127.0.0.1:9000` ou verificar serviço PHP-CGI |
 | Erro de migration | Credenciais do banco incorretas | Revisar `.env` seção `DB_*` |
 
 ---
@@ -309,7 +342,7 @@ Checklist:
 Para aplicar uma nova versão do sistema:
 
 ```cmd
-cd C:\inetpub\wwwroot\juridico
+cd C:\nginx\www\juridico
 
 git pull origin main
 
