@@ -249,9 +249,9 @@ php artisan view:cache
 ```apache
 <VirtualHost *:80>
     ServerName seu-dominio-ou-ip
-    DocumentRoot "C:/inetpub/wwwroot/juridico/public"
+    DocumentRoot "C:/juridico/public"
 
-    <Directory "C:/inetpub/wwwroot/juridico/public">
+    <Directory "C:/juridico/public">
         AllowOverride All
         Require all granted
     </Directory>

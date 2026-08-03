@@ -118,7 +118,14 @@
 @section('content')
         @if($tela == 'alterar')
             @section('content_header')
-                <h1 class="m-0 text-dark">Alteração de {{ $nome_tela }}</h1>
+                <div class="form-group row">
+                    <h1 class="m-0 text-dark col-sm-9 col-form-label">Alteração de {{ $nome_tela }}</h1>
+                    <div class="col-sm-3 text-right">
+                        <a href="{{ route('financeiro', ['cliente_id' => $clientes[0]->id ?? '']) }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-dollar-sign"></i> Financeiro do cliente
+                        </a>
+                    </div>
+                </div>
             @stop
             <form id="alterar" action="{{ route($rotaAlterar) }}" data-parsley-validate="" class="form-horizontal form-label-left" method="post">
                 <input type="hidden" id="id" name="id" class="form-control col-md-7 col-xs-12" readonly="true" value="{{ $clientes[0]->id ?? '' }}">

@@ -1,0 +1,1 @@
+<?php /**PATH C:\juridico\resources\views\site.blade.php ENDPATH**/ ?>

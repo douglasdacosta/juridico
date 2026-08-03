@@ -13,6 +13,12 @@ return new class extends Migration
      */
     public function up()
     {
+        // SQL de MODIFY é específico do MySQL; em SQLite (usado nos testes) a coluna
+        // já é criada como VARCHAR, então não há nada a alterar.
+        if (DB::connection()->getDriverName() !== 'mysql') {
+            return;
+        }
+
         // Usar SQL direto para alterar a coluna tipo de ENUM para VARCHAR
         DB::statement('ALTER TABLE andamentos MODIFY tipo VARCHAR(100) NOT NULL');
     }

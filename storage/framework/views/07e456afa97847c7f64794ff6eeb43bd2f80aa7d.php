@@ -1,0 +1,2 @@
+
+<?php echo $__env->make('adminlte::auth.verify', \Illuminate\Support\Arr::except(get_defined_vars(), ['__data', '__path']))->render(); ?><?php /**PATH C:\juridico\resources\views\auth\verify.blade.php ENDPATH**/ ?>
