@@ -106,19 +106,19 @@ npm -v
 
 Copie os arquivos do projeto para o servidor, por exemplo em:
 ```
-C:\inetpub\wwwroot\juridico
+C:\juridico
 ```
 
 Ou via Git:
 ```cmd
-git clone <URL_DO_REPOSITORIO> C:\inetpub\wwwroot\juridico
-cd C:\inetpub\wwwroot\juridico
+git clone <URL_DO_REPOSITORIO> C:\juridico
+cd C:\juridico
 ```
 
 ### 5.2 Instalar dependências PHP
 
 ```cmd
-cd C:\inetpub\wwwroot\juridico
+cd C:\juridico
 composer install --no-dev --optimize-autoloader
 ```
 
@@ -188,8 +188,8 @@ php artisan vendor:publish --provider="JeroenNoten\LaravelAdminLte\ServiceProvid
 O usuário do servidor web (IIS: `IIS_IUSRS` / Apache: o usuário do serviço) precisa de permissão de **escrita** nas pastas:
 
 ```cmd
-icacls "C:\inetpub\wwwroot\juridico\storage" /grant "IIS_IUSRS:(OI)(CI)F" /T
-icacls "C:\inetpub\wwwroot\juridico\bootstrap\cache" /grant "IIS_IUSRS:(OI)(CI)F" /T
+icacls "C:\juridico\storage" /grant "IIS_IUSRS:(OI)(CI)F" /T
+icacls "C:\juridico\bootstrap\cache" /grant "IIS_IUSRS:(OI)(CI)F" /T
 ```
 
 ### 5.9 Otimizar para produção
@@ -214,9 +214,9 @@ php artisan view:cache
 3. No IIS Manager:
    - Adicione o PHP como FastCGI: **PHP Manager → Register new PHP version** → aponte para `C:\php\php-cgi.exe`
 
-4. Crie um novo **Site** apontando para `C:\inetpub\wwwroot\juridico\public`
+4. Crie um novo **Site** apontando para `C:\juridico\public`
 
-5. Crie o arquivo `C:\inetpub\wwwroot\juridico\public\web.config`:
+5. Crie o arquivo `C:\juridico\public\web.config`:
 
 ```xml
 <?xml version="1.0" encoding="UTF-8"?>
@@ -309,7 +309,7 @@ Checklist:
 Para aplicar uma nova versão do sistema:
 
 ```cmd
-cd C:\inetpub\wwwroot\juridico
+cd C:\juridico
 
 git pull origin main
 
