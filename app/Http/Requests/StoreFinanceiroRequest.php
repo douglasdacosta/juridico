@@ -84,8 +84,7 @@ class StoreFinanceiroRequest extends FormRequest
                 }
             }
 
-                // status agora é calculado automaticamente; validações específicas de status foram removidas
-            }
+            // status agora é calculado automaticamente; validações específicas de status foram removidas
         });
     }
 }

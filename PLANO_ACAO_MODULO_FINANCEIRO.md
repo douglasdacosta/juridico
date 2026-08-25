@@ -114,3 +114,12 @@ graph LR
 - Diretórios de runtime ausentes (`storage/framework/views`, `storage/framework/cache/data`, `storage/framework/sessions`) foram recriados no container do workspace — ambiente local não tinha essas pastas, o que quebrava qualquer teste que renderizasse views Blade.
 - Arquivos novos: 4 migrations, `app/Models/Financeiro.php`, `StoreFinanceiroRequest`/`UpdateFinanceiroRequest`, `FinanceiroController`, `resources/views/financeiro.blade.php`, `tests/Feature/FinanceiroCrudTest.php`. Arquivos alterados: `Cliente.php`, `Processo.php`, `ProcessosController.php` (novo `apiSearch`), `routes/web.php`, `clientes.blade.php` (link "Financeiro do cliente").
 
+
+
+ git reset  storage/framework/.gitignore -> storage/.gitignore
+git reset storage/app/.gitignore
+git reset storage/app/public/.gitignore
+git reset storage/framework/cache/.gitignore -> storage/cache/.gitignore
+git reset storage/framework/cache/data/.gitignore -> storage/cache/data/.gitignore        
+git reset storage/framework/testing/.gitignore              
+git reset storage/framework/views/.gitignore
