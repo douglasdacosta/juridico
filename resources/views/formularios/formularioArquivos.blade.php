@@ -4,7 +4,7 @@
         <button type="button" class="form-control btn btn-success btn-sm adicionar_arquivo" id="adicionar_arquivo"><i class="fa fa-plus"></i> Adicionar arquivo</button>
     </div>
     <div class="ml-2 col-md-12 ">
-        <small>Tipos permitidos: pdf, doc, docx, jpg, png, jpeg, zip. Tamanho máximo: 10MB</small>
+        <small>Tipos permitidos: pdf, doc, docx, jpg, png, jpeg, zip, ogg. Tamanho máximo: 10MB</small>
     </div>
 
 

@@ -50,7 +50,7 @@ class DocumentosController extends Controller
     {
         if ($request->isMethod('post')) {
             $validated = $request->validate([
-                'arquivo' => 'required|file|max:51200|mimes:pdf,doc,docx,xls,xlsx,jpg,jpeg,png,gif',
+                'arquivo' => 'required|file|max:51200|mimes:pdf,doc,docx,xls,xlsx,jpg,jpeg,png,gif,ogg',
                 'cliente_id' => 'nullable|exists:clientes,id',
                 'processo_id' => 'nullable|exists:processos,id',
                 'andamento_id' => 'nullable|exists:andamentos,id',
@@ -134,7 +134,7 @@ class DocumentosController extends Controller
             $documento = Documento::query()->findOrFail((int) $request->input('id'));
 
             $validated = $request->validate([
-                'arquivo' => 'nullable|file|max:51200|mimes:pdf,doc,docx,xls,xlsx,jpg,jpeg,png,gif',
+                'arquivo' => 'nullable|file|max:51200|mimes:pdf,doc,docx,xls,xlsx,jpg,jpeg,png,gif,ogg',
                 'cliente_id' => 'nullable|exists:clientes,id',
                 'processo_id' => 'nullable|exists:processos,id',
                 'andamento_id' => 'nullable|exists:andamentos,id',

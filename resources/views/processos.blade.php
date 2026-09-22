@@ -341,7 +341,7 @@
                                                     <div class="mb-3">
                                                         <label for="arquivo_upload" class="form-label">Arquivo *</label>
                                                         <input type="file" class="form-control" id="arquivo_upload" name="arquivo" required>
-                                                        <small class="text-muted">Formatos: PDF, DOC, DOCX, XLS, XLSX, JPG, PNG, GIF (máx 50MB)</small>
+                                                        <small class="text-muted">Formatos: PDF, DOC, DOCX, XLS, XLSX, JPG, PNG, GIF, OGG (máx 50MB)</small>
                                                     </div>
                                                 </div>
                                                 <div class="col-md-6">
