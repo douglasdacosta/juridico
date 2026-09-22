@@ -74,6 +74,96 @@
       </div>
     </div>
 
+    <div class="row">
+      <div class="col-lg-3 col-md-6 col-12">
+        <div class="small-box bg-gradient-info">
+          <div class="inner">
+            <h3>R$ <?php echo e(number_format($kpisFinanceiros['a_receber_pendente'], 2, ',', '.')); ?></h3>
+            <p>A receber (pendente)</p>
+          </div>
+          <div class="icon"><i class="fa fa-hand-holding-usd"></i></div>
+        </div>
+      </div>
+      <div class="col-lg-3 col-md-6 col-12">
+        <div class="small-box bg-gradient-success">
+          <div class="inner">
+            <h3>R$ <?php echo e(number_format($kpisFinanceiros['recebido_mes'], 2, ',', '.')); ?></h3>
+            <p>Recebido este mês</p>
+          </div>
+          <div class="icon"><i class="fa fa-wallet"></i></div>
+        </div>
+      </div>
+      <div class="col-lg-3 col-md-6 col-12">
+        <div class="small-box bg-gradient-danger">
+          <div class="inner">
+            <h3>R$ <?php echo e(number_format($kpisFinanceiros['total_receber_atraso'], 2, ',', '.')); ?></h3>
+            <p>A receber em atraso</p>
+          </div>
+          <div class="icon"><i class="fa fa-exclamation-triangle"></i></div>
+        </div>
+      </div>
+      <div class="col-lg-3 col-md-6 col-12">
+        <div class="small-box bg-gradient-warning">
+          <div class="inner">
+            <h3>R$ <?php echo e(number_format($kpisFinanceiros['total_pagar_atraso'], 2, ',', '.')); ?></h3>
+            <p>A pagar em atraso</p>
+          </div>
+          <div class="icon"><i class="fa fa-file-invoice-dollar"></i></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="row mb-3">
+      <div class="col-lg-4 col-12 mb-3">
+        <div class="x_panel h-100">
+          <div class="x_title">
+            <h4>Processos por status</h4>
+            <div class="clearfix"></div>
+          </div>
+          <div class="x_content">
+            <canvas id="graficoProcessosPorStatus" height="220"></canvas>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-5 col-12 mb-3">
+        <div class="x_panel h-100">
+          <div class="x_title">
+            <h4>Entradas x Saídas (últimos 6 meses)</h4>
+            <div class="clearfix"></div>
+          </div>
+          <div class="x_content">
+            <canvas id="graficoFluxoMensal" height="220"></canvas>
+          </div>
+        </div>
+      </div>
+      <div class="col-lg-3 col-12 mb-3">
+        <div class="x_panel h-100">
+          <div class="x_title">
+            <h4>Próximos compromissos</h4>
+            <div class="clearfix"></div>
+          </div>
+          <div class="x_content" style="max-height: 260px; overflow-y: auto;">
+            <?php $__empty_1 = true; $__currentLoopData = $proximosCompromissos; $__env->addLoop($__currentLoopData); foreach($__currentLoopData as $compromisso): $__env->incrementLoopIndices(); $loop = $__env->getLastLoop(); $__empty_1 = false; ?>
+              <div class="mb-2 pb-2 border-bottom">
+                <strong><?php echo e($compromisso->titulo); ?></strong>
+                <div class="small text-muted">
+                  <?php echo e($compromisso->data_hora->format('d/m/Y H:i')); ?>
+
+                  <?php if($compromisso->processo): ?>
+                    — <?php echo e($compromisso->processo->numero_processo); ?>
+
+                  <?php endif; ?>
+                </div>
+              </div>
+            <?php endforeach; $__env->popLoop(); $loop = $__env->getLastLoop(); if ($__empty_1): ?>
+              <p class="text-muted text-center mb-0">Nenhum compromisso agendado.</p>
+            <?php endif; ?>
+            <a href="<?php echo e(route('agenda')); ?>" class="btn btn-link btn-sm p-0 mt-2">Ver agenda completa</a>
+          </div>
+        </div>
+      </div>
+    </div>
+
     <div class="row mb-3">
       <div class="col-12">
         <div class="card bg-light">
@@ -165,12 +255,59 @@
   <script src="js/jquery.mask.js"></script>
   <script src="js/select2.min.js"></script>
   <script src="js/main_custom.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
   <script>
     // Configurar cabeçalho CSRF para todas requisições AJAX
     $.ajaxSetup({
         headers: {
             'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
         }
+    });
+
+    document.addEventListener('DOMContentLoaded', function () {
+      var statusLabels = {
+        ativo: 'Ativo',
+        encerrado: 'Encerrado',
+        suspenso: 'Suspenso',
+        arquivado: 'Arquivado',
+      };
+
+      var processosPorStatus = <?php echo json_encode($processosPorStatus, 15, 512) ?>;
+      var labelsStatus = Object.keys(processosPorStatus).map(function (chave) {
+        return statusLabels[chave] || chave;
+      });
+      var valoresStatus = Object.values(processosPorStatus);
+
+      var canvasStatus = document.getElementById('graficoProcessosPorStatus');
+      if (canvasStatus && typeof Chart !== 'undefined') {
+        new Chart(canvasStatus.getContext('2d'), {
+          type: 'doughnut',
+          data: {
+            labels: labelsStatus,
+            datasets: [{
+              data: valoresStatus,
+              backgroundColor: ['#28a745', '#dc3545', '#ffc107', '#6c757d'],
+            }],
+          },
+          options: { plugins: { legend: { position: 'bottom' } } },
+        });
+      }
+
+      var fluxoMensal = <?php echo json_encode($fluxoMensal, 15, 512) ?>;
+      var canvasFluxo = document.getElementById('graficoFluxoMensal');
+      if (canvasFluxo && typeof Chart !== 'undefined') {
+        new Chart(canvasFluxo.getContext('2d'), {
+          type: 'bar',
+          data: {
+            labels: fluxoMensal.map(function (linha) { return linha.mes; }),
+            datasets: [
+              { label: 'Entradas', data: fluxoMensal.map(function (linha) { return linha.entradas; }), backgroundColor: '#28a745' },
+              { label: 'Saídas', data: fluxoMensal.map(function (linha) { return linha.saidas; }), backgroundColor: '#dc3545' },
+            ],
+          },
+          options: { plugins: { legend: { position: 'bottom' } }, scales: { y: { beginAtZero: true } } },
+        });
+      }
     });
 
     $(function () {

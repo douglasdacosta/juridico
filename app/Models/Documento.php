@@ -22,6 +22,8 @@ class Documento extends Model
         'andamento_id',
         'version_group_id',
         'versao',
+        'origem',
+        'modelo_documento_id',
         'shared_with_client',
         'usuario_id',
         'ativo',
@@ -50,5 +52,10 @@ class Documento extends Model
     public function usuario()
     {
         return $this->belongsTo(User::class, 'usuario_id');
+    }
+
+    public function modeloDocumento()
+    {
+        return $this->belongsTo(ModeloDocumento::class, 'modelo_documento_id');
     }
 }

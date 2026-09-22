@@ -4,11 +4,15 @@ namespace App\Http\Controllers;
 
 use App\Http\Requests\StoreProcessosRequest;
 use App\Http\Requests\UpdateProcessosRequest;
+use App\Exports\ProcessosExport;
 use App\Models\Filial;
 use App\Models\Cliente;
+use App\Models\ModeloDocumento;
 use App\Models\Processo;
 use App\Models\User;
+use App\Support\PdfExporter;
 use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ProcessosController extends Controller
 {
@@ -97,9 +101,16 @@ class ProcessosController extends Controller
 
     public function exportPrint(Request $request)
     {
-        return view('exports.processos-print', [
+        return PdfExporter::stream('exports.processos-print', [
             'processos' => $this->baseQuery($request)->orderByDesc('id')->get(),
-        ]);
+        ], 'processos.pdf');
+    }
+
+    public function exportXlsx(Request $request)
+    {
+        $processos = $this->baseQuery($request)->orderByDesc('id')->get();
+
+        return Excel::download(new ProcessosExport($processos), 'processos.xlsx');
     }
 
     public function incluir(StoreProcessosRequest $request)
@@ -150,10 +161,11 @@ class ProcessosController extends Controller
             return redirect()->route('processos')->with('success', 'Processo atualizado com sucesso.');
         }
 
-        $processo = Processo::query()->with(['clientes', 'filiais', 'documentos.andamento', 'andamentos.usuario', 'andamentos.criador'])->findOrFail((int) $request->input('id'));
+        $processo = Processo::query()->with(['clientes', 'filiais', 'documentos.andamento', 'andamentos.usuario', 'andamentos.criador', 'compromissos.responsavel'])->findOrFail((int) $request->input('id'));
 
         return view('processos', array_merge($this->formData('alterar'), [
             'processo' => $processo,
+            'modelosAtivos' => ModeloDocumento::ativos()->get(),
         ]));
     }
 

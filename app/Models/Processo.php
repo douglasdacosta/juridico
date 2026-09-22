@@ -65,4 +65,9 @@ class Processo extends Model
         return $this->belongsToMany(Financeiro::class, 'financeiro_processo', 'processo_id', 'financeiro_id')
             ->withTimestamps();
     }
+
+    public function compromissos()
+    {
+        return $this->hasMany(Compromisso::class, 'processo_id');
+    }
 }

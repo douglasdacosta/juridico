@@ -118,4 +118,25 @@ class Financeiro extends Model
     {
         return self::STATUS_OPTIONS[$this->computed_status] ?? $this->computed_status;
     }
+
+    /**
+     * Soma dos valores em atraso: lançamentos à vista vencidos + parcelas vencidas não pagas.
+     * Reaproveitado pelo Dashboard (indicador financeiro) e pelo relatório de inadimplência.
+     */
+    public static function totalEmAtraso(): float
+    {
+        $avistaVencido = self::query()
+            ->where('parcelado', false)
+            ->whereNull('valor_pago')
+            ->whereNotNull('data_pagamento')
+            ->where('data_pagamento', '<', now()->startOfDay())
+            ->sum('valor_causa');
+
+        $parcelasVencidas = FinanceiroParcela::query()
+            ->whereNull('data_pagamento')
+            ->where('data_vencimento', '<', now()->startOfDay())
+            ->sum('valor');
+
+        return (float) $avistaVencido + (float) $parcelasVencidas;
+    }
 }

@@ -5,7 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Andamento;
 use App\Models\Documento;
 use App\Models\Cliente;
+use App\Models\ModeloDocumento;
 use App\Models\Processo;
+use App\Services\GeradorDocumentoService;
+use App\Support\PdfExporter;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -245,6 +248,59 @@ class DocumentosController extends Controller
                 'Content-Disposition' => 'inline; filename="' . addslashes($documento->nome_original) . '"',
             ]
         );
+    }
+
+    /**
+     * Gera um documento (contrato/petição) a partir de um ModeloDocumento, preenchendo
+     * os placeholders com os dados do processo/cliente, convertendo em PDF real e
+     * salvando como um novo Documento vinculado ao processo (origem = 'modelo').
+     */
+    public function gerarDeModelo(Request $request)
+    {
+        $validated = $request->validate([
+            'processo_id' => 'required|exists:processos,id',
+            'modelo_documento_id' => 'required|exists:modelos_documento,id',
+            'cliente_id' => 'nullable|exists:clientes,id',
+        ], [
+            'processo_id.required' => 'Processo inválido.',
+            'modelo_documento_id.required' => 'Selecione um modelo de documento.',
+        ]);
+
+        $processo = Processo::query()->with('clientes')->findOrFail((int) $validated['processo_id']);
+        $modelo = ModeloDocumento::query()->findOrFail((int) $validated['modelo_documento_id']);
+        $cliente = !empty($validated['cliente_id']) ? Cliente::find($validated['cliente_id']) : null;
+
+        $conteudo = app(GeradorDocumentoService::class)->gerar($modelo, $processo, $cliente);
+
+        $nomeOriginal = $modelo->nome . ' - ' . $processo->numero_processo . '.pdf';
+        $nomeArmazenado = now()->format('YmdHis') . '_' . Str::random(12) . '.pdf';
+        $contexto = $this->resolveContextoPath($cliente?->id, $processo->id, null);
+
+        $pdfBytes = PdfExporter::bytes('documentos.gerado-pdf', [
+            'titulo' => $nomeOriginal,
+            'conteudo' => $conteudo,
+        ]);
+
+        Storage::disk('local')->put($contexto . '/' . $nomeArmazenado, $pdfBytes);
+
+        $documento = Documento::create([
+            'nome_original' => $nomeOriginal,
+            'nome_armazenado' => $nomeArmazenado,
+            'tipo_midia' => 'application/pdf',
+            'tamanho' => strlen($pdfBytes),
+            'caminho' => $contexto . '/' . $nomeArmazenado,
+            'cliente_id' => $cliente?->id,
+            'processo_id' => $processo->id,
+            'versao' => 1,
+            'origem' => 'modelo',
+            'modelo_documento_id' => $modelo->id,
+            'shared_with_client' => true,
+            'usuario_id' => auth()->id(),
+            'ativo' => true,
+        ]);
+
+        return redirect()->route('alterar-processos', ['id' => $processo->id])
+            ->with('success', 'Documento "' . $modelo->nome . '" gerado com sucesso a partir do modelo.');
     }
 
     private function resolveContextoPath($clienteId, $processoId, $andamentoId): string

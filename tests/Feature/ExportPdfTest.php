@@ -32,8 +32,8 @@ class ExportPdfTest extends TestCase
         $response = $this->actingAs($user)->get('/exportar-clientes-pdf');
 
         $response->assertOk();
-        $response->assertSee('Relatório de Clientes');
-        $response->assertSee('Cliente PDF');
+        $response->assertHeader('Content-Type', 'application/pdf');
+        $this->assertStringStartsWith('%PDF-', $response->getContent());
     }
 
     public function test_authenticated_user_can_export_processos_pdf(): void
@@ -71,7 +71,7 @@ class ExportPdfTest extends TestCase
         $response = $this->actingAs($user)->get('/exportar-processos-pdf');
 
         $response->assertOk();
-        $response->assertSee('Relatório de Processos');
-        $response->assertSee('000777-11.2026.8.26.0001');
+        $response->assertHeader('Content-Type', 'application/pdf');
+        $this->assertStringStartsWith('%PDF-', $response->getContent());
     }
 }

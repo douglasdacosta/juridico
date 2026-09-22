@@ -122,6 +122,9 @@
                             <a href="{{ route('exportar-processos-pdf', request()->query()) }}" class="btn btn-outline-secondary" target="_blank">
                                 <i class="fas fa-file-pdf"></i> Exportar PDF
                             </a>
+                            <a href="{{ route('exportar-processos-xlsx', request()->query()) }}" class="btn btn-outline-success">
+                                <i class="fas fa-file-excel"></i> Exportar Excel
+                            </a>
                         </div>
                     </div>
                 </div>
@@ -179,6 +182,78 @@
                                             @empty
                                                 <p class="text-muted text-center">Nenhum andamento registrado.</p>
                                             @endforelse
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="card mt-3">
+                                    <div class="card-header d-flex justify-content-between align-items-center">
+                                        <h5 class="mb-0">Agenda do Processo</h5>
+                                        <button type="button"
+                                                class="btn btn-sm btn-primary"
+                                                data-toggle="modal"
+                                                data-target="#modalNovoCompromissoProcesso">
+                                            <i class="fas fa-plus"></i> Novo Compromisso
+                                        </button>
+                                    </div>
+                                    <div class="card-body" style="max-height: 400px; overflow-y: auto;">
+                                        @forelse($processo->compromissos->sortBy('data_hora') as $compromisso)
+                                            <div class="mb-3 p-3 border rounded">
+                                                <div class="d-flex justify-content-between align-items-start">
+                                                    <div>
+                                                        <span class="badge bg-secondary">{{ $compromisso->tipo_label }}</span>
+                                                        <small class="text-muted ms-2">{{ $compromisso->data_hora->format('d/m/Y H:i') }}</small>
+                                                    </div>
+                                                    <small class="text-muted">{{ $compromisso->status_label }}</small>
+                                                </div>
+                                                <p class="mb-0 mt-2">{{ $compromisso->titulo }}</p>
+                                            </div>
+                                        @empty
+                                            <p class="text-muted text-center">Nenhum compromisso agendado.</p>
+                                        @endforelse
+                                        <a href="{{ route('agenda', ['processo_id' => $processo->id]) }}" target="_blank" class="btn btn-link btn-sm p-0">Ver na agenda completa</a>
+                                    </div>
+                                </div>
+
+                                <!-- Modal Novo Compromisso (vinculado a este processo) -->
+                                <div class="modal fade" id="modalNovoCompromissoProcesso" tabindex="-1" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title">Novo Compromisso</h5>
+                                                <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                                                    <span aria-hidden="true">&times;</span>
+                                                </button>
+                                            </div>
+                                            <div class="modal-body">
+                                                <div class="form-group">
+                                                    <label>Título</label>
+                                                    <input type="text" class="form-control" id="modal_compromisso_titulo" required>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label>Tipo</label>
+                                                    <select class="form-control" id="modal_compromisso_tipo">
+                                                        <option value="audiencia">Audiência</option>
+                                                        <option value="prazo_fatal">Prazo Fatal</option>
+                                                        <option value="reuniao">Reunião</option>
+                                                        <option value="outro" selected>Outro</option>
+                                                    </select>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label>Data e hora</label>
+                                                    <input type="datetime-local" class="form-control" id="modal_compromisso_data_hora" required>
+                                                </div>
+                                                <div class="form-group">
+                                                    <label>Observações</label>
+                                                    <textarea class="form-control" id="modal_compromisso_observacoes" rows="3"></textarea>
+                                                </div>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                                                <button type="button" class="btn btn-primary" onclick="salvarCompromissoModal()">
+                                                    <i class="fas fa-save"></i> Salvar Compromisso
+                                                </button>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -327,6 +402,60 @@
                                     <button type="button" class="btn btn-sm btn-primary" onclick="toggleFormDocumento()">
                                         <i class="fas fa-plus"></i> Incluir Documento
                                     </button>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" data-toggle="modal" data-target="#modalGerarDocumento">
+                                        <i class="fas fa-magic"></i> Gerar Documento
+                                    </button>
+                                </div>
+
+                                <!-- Modal Gerar Documento a partir de Modelo -->
+                                <div class="modal fade" id="modalGerarDocumento" tabindex="-1" aria-hidden="true">
+                                    <div class="modal-dialog">
+                                        <div class="modal-content">
+                                            <form action="{{ route('gerar-documento') }}" method="post">
+                                                @csrf
+                                                <input type="hidden" name="processo_id" value="{{ $processo->id }}">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title">Gerar Documento a partir de Modelo</h5>
+                                                    <button type="button" class="close" data-dismiss="modal" aria-label="Fechar">
+                                                        <span aria-hidden="true">&times;</span>
+                                                    </button>
+                                                </div>
+                                                <div class="modal-body">
+                                                    @if(($modelosAtivos ?? collect())->isEmpty())
+                                                        <p class="text-muted mb-0">
+                                                            Nenhum modelo de documento cadastrado.
+                                                            <a href="{{ route('incluir-modelos-documento') }}" target="_blank">Cadastrar um modelo</a>.
+                                                        </p>
+                                                    @else
+                                                        <div class="form-group">
+                                                            <label>Modelo</label>
+                                                            <select class="form-control" name="modelo_documento_id" required>
+                                                                @foreach($modelosAtivos as $modeloOpcao)
+                                                                    <option value="{{ $modeloOpcao->id }}">{{ $modeloOpcao->nome }} ({{ $modeloOpcao->tipo_label }})</option>
+                                                                @endforeach
+                                                            </select>
+                                                        </div>
+                                                        @if($processo->clientes->count())
+                                                            <div class="form-group">
+                                                                <label>Cliente (para os placeholders)</label>
+                                                                <select class="form-control" name="cliente_id">
+                                                                    @foreach($processo->clientes as $clienteOpcao)
+                                                                        <option value="{{ $clienteOpcao->id }}">{{ $clienteOpcao->nome }}</option>
+                                                                    @endforeach
+                                                                </select>
+                                                            </div>
+                                                        @endif
+                                                    @endif
+                                                </div>
+                                                <div class="modal-footer">
+                                                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                                                    @if(($modelosAtivos ?? collect())->isNotEmpty())
+                                                        <button type="submit" class="btn btn-primary">Gerar PDF</button>
+                                                    @endif
+                                                </div>
+                                            </form>
+                                        </div>
+                                    </div>
                                 </div>
 
                                 <div id="form-upload-documento" class="card mb-3" style="display: none;">
@@ -404,7 +533,14 @@
                                         @forelse(($processo->documentos ?? []) as $documento)
                                             <tr>
                                                 <td>{{ $documento->id }}</td>
-                                                <td>{{ $documento->nome_original }}</td>
+                                                <td>
+                                                    {{ $documento->nome_original }}
+                                                    @if($documento->origem === 'modelo')
+                                                        <span class="badge badge-secondary" title="Gerado automaticamente a partir de um modelo">
+                                                            <i class="fas fa-magic"></i> Gerado
+                                                        </span>
+                                                    @endif
+                                                </td>
                                                 <td>v{{ $documento->versao }}</td>
                                                 <td>
                                                     <span class="badge badge-primary">{{ $processo->tipoAcao?->nome ?? $processo->tipo_acao }}</span>
@@ -837,6 +973,39 @@
                 },
                 error: function(xhr) {
                     alert('Erro ao salvar andamento: ' + (xhr.responseJSON?.message || 'Erro desconhecido'));
+                }
+            });
+        }
+
+        function salvarCompromissoModal() {
+            const processoId = {{ isset($processo) ? $processo->id : 'null' }};
+            const titulo = $('#modal_compromisso_titulo').val();
+            const tipo = $('#modal_compromisso_tipo').val();
+            const dataHora = $('#modal_compromisso_data_hora').val();
+            const observacoes = $('#modal_compromisso_observacoes').val();
+
+            if (!titulo || !dataHora) {
+                alert('Preencha o título e a data/hora do compromisso.');
+                return;
+            }
+
+            $.ajax({
+                url: '{{ route("incluir-agenda") }}',
+                method: 'POST',
+                data: {
+                    _token: $('meta[name="csrf-token"]').attr('content'),
+                    processo_id: processoId,
+                    titulo: titulo,
+                    tipo: tipo,
+                    data_hora: dataHora,
+                    observacoes: observacoes
+                },
+                success: function() {
+                    $('#modalNovoCompromissoProcesso').modal('hide');
+                    location.reload();
+                },
+                error: function(xhr) {
+                    alert('Erro ao salvar compromisso: ' + (xhr.responseJSON?.message || 'Erro desconhecido'));
                 }
             });
         }

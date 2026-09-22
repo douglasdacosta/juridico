@@ -4,14 +4,16 @@
     <meta charset="UTF-8">
     <title>Exportação de Processos</title>
     <style>
-        body { font-family: Arial, sans-serif; font-size: 12px; color: #222; }
-        h1 { margin-bottom: 16px; }
+        body { font-family: Arial, sans-serif; font-size: 11px; color: #222; }
+        h1 { margin-bottom: 16px; font-size: 15px; }
         table { width: 100%; border-collapse: collapse; }
-        th, td { border: 1px solid #ccc; padding: 8px; vertical-align: top; }
+        th, td { border: 1px solid #ccc; padding: 6px; vertical-align: top; }
         th { background: #f3f3f3; }
     </style>
 </head>
-<body onload="window.print()">
+<body>
+    @include('exports._letterhead')
+
     <h1>Relatório de Processos</h1>
     <table>
         <thead>

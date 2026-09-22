@@ -3,9 +3,15 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Illuminate\Database\Eloquent\Model;
+use Illuminate\Foundation\Auth\User as Authenticatable;
 
-class Cliente extends Model
+/**
+ * Além de ser o cadastro interno de clientes, este model também autentica o
+ * Portal do Cliente (guard "cliente", ver config/auth.php) via CPF + senha.
+ * "password" é deliberadamente omitido do $fillable: só é gravado através de
+ * ClientesController::definirAcessoPortal, nunca pelo formulário de cadastro.
+ */
+class Cliente extends Authenticatable
 {
     use HasFactory;
 
@@ -29,6 +35,11 @@ class Cliente extends Model
         'ativo',
         'lgpd_consent_at',
         'lgpd_purpose',
+    ];
+
+    protected $hidden = [
+        'password',
+        'remember_token',
     ];
 
     protected $casts = [

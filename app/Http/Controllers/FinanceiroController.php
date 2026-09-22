@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\FinanceiroExport;
 use App\Http\Requests\StoreFinanceiroRequest;
 use App\Http\Requests\UpdateFinanceiroRequest;
 use App\Models\Cliente;
@@ -9,6 +10,7 @@ use App\Models\Financeiro;
 use App\Models\FinanceiroParcela;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
 
 class FinanceiroController extends Controller
 {
@@ -25,6 +27,13 @@ class FinanceiroController extends Controller
             'statusOptions' => Financeiro::STATUS_OPTIONS,
             'request' => $request,
         ]);
+    }
+
+    public function exportXlsx(Request $request)
+    {
+        $lancamentos = $this->baseQuery($request)->orderByDesc('id')->get();
+
+        return Excel::download(new FinanceiroExport($lancamentos), 'financeiro.xlsx');
     }
 
     public function incluir(StoreFinanceiroRequest $request)

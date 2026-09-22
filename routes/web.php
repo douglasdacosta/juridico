@@ -39,6 +39,8 @@ Route::match(['get', 'post'], '/incluir-clientes', [App\Http\Controllers\Cliente
 Route::post('/desativar-clientes', [App\Http\Controllers\ClientesController::class, 'desativar'])->name('desativar-clientes')->middleware('auth', 'afterAuth:clientes');
 Route::get('/exportar-clientes-csv', [App\Http\Controllers\ClientesController::class, 'exportCsv'])->name('exportar-clientes-csv')->middleware('auth');
 Route::get('/exportar-clientes-pdf', [App\Http\Controllers\ClientesController::class, 'exportPrint'])->name('exportar-clientes-pdf')->middleware('auth');
+Route::get('/exportar-clientes-xlsx', [App\Http\Controllers\ClientesController::class, 'exportXlsx'])->name('exportar-clientes-xlsx')->middleware('auth');
+Route::post('/clientes/definir-acesso-portal', [App\Http\Controllers\ClientesController::class, 'definirAcessoPortal'])->name('clientes.definir-acesso-portal')->middleware('auth', 'afterAuth:clientes');
 
 Route::get('/settings', [App\Http\Controllers\SettingsController::class, 'index'])
     ->name('settings')
@@ -80,6 +82,9 @@ Route::get('/exportar-processos-csv', [App\Http\Controllers\ProcessosController:
 Route::get('/exportar-processos-pdf', [App\Http\Controllers\ProcessosController::class, 'exportPrint'])
     ->name('exportar-processos-pdf')
     ->middleware('auth');
+Route::get('/exportar-processos-xlsx', [App\Http\Controllers\ProcessosController::class, 'exportXlsx'])
+    ->name('exportar-processos-xlsx')
+    ->middleware('auth');
 
 Route::match(['get', 'post'], '/financeiro', [App\Http\Controllers\FinanceiroController::class, 'index'])
     ->name('financeiro')
@@ -105,6 +110,44 @@ Route::post('/financeiro/pagar', [App\Http\Controllers\FinanceiroController::cla
     ->name('financeiro.pagar')
     ->middleware('auth', 'afterAuth:financeiro');
 
+Route::get('/exportar-financeiro-xlsx', [App\Http\Controllers\FinanceiroController::class, 'exportXlsx'])
+    ->name('exportar-financeiro-xlsx')
+    ->middleware('auth', 'afterAuth:financeiro');
+
+// Despesas (Contas a Pagar)
+Route::match(['get', 'post'], '/despesas', [App\Http\Controllers\DespesasController::class, 'index'])
+    ->name('despesas')
+    ->middleware('auth', 'afterAuth:despesas');
+
+Route::match(['get', 'post'], '/alterar-despesas', [App\Http\Controllers\DespesasController::class, 'alterar'])
+    ->name('alterar-despesas')
+    ->middleware('auth', 'afterAuth:despesas');
+
+Route::match(['get', 'post'], '/incluir-despesas', [App\Http\Controllers\DespesasController::class, 'incluir'])
+    ->name('incluir-despesas')
+    ->middleware('auth', 'afterAuth:despesas');
+
+Route::post('/excluir-despesas', [App\Http\Controllers\DespesasController::class, 'excluir'])
+    ->name('excluir-despesas')
+    ->middleware('auth', 'afterAuth:despesas');
+
+Route::post('/despesas/pagar', [App\Http\Controllers\DespesasController::class, 'pagar'])
+    ->name('despesas.pagar')
+    ->middleware('auth', 'afterAuth:despesas');
+
+// Relatórios Financeiros (Fluxo de Caixa / Inadimplência)
+Route::get('/relatorios/fluxo-caixa', [App\Http\Controllers\RelatorioFinanceiroController::class, 'fluxoCaixa'])
+    ->name('relatorios.fluxo-caixa')
+    ->middleware('auth', 'afterAuth:financeiro');
+
+Route::get('/relatorios/inadimplencia', [App\Http\Controllers\RelatorioFinanceiroController::class, 'inadimplencia'])
+    ->name('relatorios.inadimplencia')
+    ->middleware('auth', 'afterAuth:financeiro');
+
+Route::get('/relatorios/fluxo-caixa/pdf', [App\Http\Controllers\RelatorioFinanceiroController::class, 'exportarFluxoCaixaPdf'])
+    ->name('relatorios.fluxo-caixa.pdf')
+    ->middleware('auth', 'afterAuth:financeiro');
+
 // Rota de listagem de andamentos removida - andamentos são gerenciados dentro dos processos
 // Route::match(['get', 'post'], '/andamentos', [App\Http\Controllers\AndamentosController::class, 'index'])
 //     ->name('andamentos')
@@ -120,6 +163,31 @@ Route::match(['get', 'post'], '/incluir-andamentos', [App\Http\Controllers\Andam
     ->middleware('auth');
 Route::match(['get', 'post'], '/incluir-andamento', [App\Http\Controllers\AndamentosController::class, 'incluir'])
     ->name('incluir-andamento')
+    ->middleware('auth');
+
+// Agenda / Compromissos
+Route::match(['get', 'post'], '/agenda', [App\Http\Controllers\CompromissosController::class, 'index'])
+    ->name('agenda')
+    ->middleware('auth', 'afterAuth:agenda');
+
+Route::match(['get', 'post'], '/incluir-agenda', [App\Http\Controllers\CompromissosController::class, 'incluir'])
+    ->name('incluir-agenda')
+    ->middleware('auth', 'afterAuth:agenda');
+
+Route::match(['get', 'post'], '/alterar-agenda', [App\Http\Controllers\CompromissosController::class, 'alterar'])
+    ->name('alterar-agenda')
+    ->middleware('auth', 'afterAuth:agenda');
+
+Route::post('/concluir-agenda', [App\Http\Controllers\CompromissosController::class, 'concluir'])
+    ->name('concluir-agenda')
+    ->middleware('auth', 'afterAuth:agenda');
+
+Route::post('/excluir-agenda', [App\Http\Controllers\CompromissosController::class, 'excluir'])
+    ->name('excluir-agenda')
+    ->middleware('auth', 'afterAuth:agenda');
+
+Route::get('/api/compromissos/feed', [App\Http\Controllers\CompromissosController::class, 'feed'])
+    ->name('api.compromissos.feed')
     ->middleware('auth');
 
 // Tipos de Ação
@@ -162,6 +230,27 @@ Route::post('/excluir-documentos', [App\Http\Controllers\DocumentosController::c
 Route::get('/preview-documentos/{id}', [App\Http\Controllers\DocumentosController::class, 'preview'])
     ->name('preview-documentos')
     ->middleware('auth');
+
+Route::post('/gerar-documento', [App\Http\Controllers\DocumentosController::class, 'gerarDeModelo'])
+    ->name('gerar-documento')
+    ->middleware('auth');
+
+// Modelos de Documento (Automação de Documentos)
+Route::match(['get', 'post'], '/modelos-documento', [App\Http\Controllers\ModeloDocumentoController::class, 'index'])
+    ->name('modelos-documento')
+    ->middleware('auth', 'afterAuth:modelos-documento');
+
+Route::match(['get', 'post'], '/incluir-modelos-documento', [App\Http\Controllers\ModeloDocumentoController::class, 'incluir'])
+    ->name('incluir-modelos-documento')
+    ->middleware('auth', 'afterAuth:modelos-documento');
+
+Route::match(['get', 'post'], '/alterar-modelos-documento', [App\Http\Controllers\ModeloDocumentoController::class, 'alterar'])
+    ->name('alterar-modelos-documento')
+    ->middleware('auth', 'afterAuth:modelos-documento');
+
+Route::post('/desativar-modelos-documento', [App\Http\Controllers\ModeloDocumentoController::class, 'desativar'])
+    ->name('desativar-modelos-documento')
+    ->middleware('auth', 'afterAuth:modelos-documento');
 
 // Tipos de Ação CRUD
 Route::match(['get', 'post'], '/tipos-acao', [App\Http\Controllers\TipoAcaoController::class, 'index'])

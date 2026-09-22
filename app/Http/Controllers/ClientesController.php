@@ -2,10 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\ClientesExport;
 use App\Models\Cliente;
 use App\Models\Processo;
 use App\Models\User;
+use App\Support\PdfExporter;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
+use Maatwebsite\Excel\Facades\Excel;
 
 class ClientesController extends Controller
 {
@@ -60,9 +64,48 @@ class ClientesController extends Controller
 
     public function exportPrint(Request $request)
     {
-        return view('exports.clientes-print', [
+        return PdfExporter::stream('exports.clientes-print', [
             'clientes' => $this->baseQuery($request)->orderBy('id', 'desc')->get(),
+        ], 'clientes.pdf');
+    }
+
+    public function exportXlsx(Request $request)
+    {
+        $clientes = $this->baseQuery($request)->orderBy('id', 'desc')->get();
+
+        return Excel::download(new ClientesExport($clientes), 'clientes.xlsx');
+    }
+
+    /**
+     * Define/reseta a senha de acesso do cliente ao Portal do Cliente (guard "cliente").
+     * A senha é informada pelo próprio usuário interno e passada verbalmente/manualmente
+     * ao cliente — não há envio automático por e-mail ou SMS nesta versão.
+     */
+    public function definirAcessoPortal(Request $request)
+    {
+        $validated = $request->validate([
+            'id' => 'required|integer|exists:clientes,id',
+            'password' => 'required|string|min:6|confirmed',
+        ], [
+            'password.required' => 'Informe a nova senha de acesso.',
+            'password.min' => 'A senha deve ter no mínimo 6 caracteres.',
+            'password.confirmed' => 'A confirmação de senha não corresponde.',
         ]);
+
+        $cliente = Cliente::findOrFail((int) $validated['id']);
+
+        if (empty($cliente->cpf)) {
+            return redirect()->route('alterar-clientes', ['id' => $cliente->id])
+                ->with('error', 'Cadastre o CPF do cliente antes de liberar o acesso ao portal.');
+        }
+
+        // Atribuição direta (não via update()/fillable) pois "password" é
+        // deliberadamente omitido de $fillable no model Cliente.
+        $cliente->password = Hash::make($validated['password']);
+        $cliente->save();
+
+        return redirect()->route('alterar-clientes', ['id' => $cliente->id])
+            ->with('success', 'Senha de acesso ao portal definida com sucesso.');
     }
 
     public function alterar(Request $request)

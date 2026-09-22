@@ -32,6 +32,21 @@
                 <div class="alert alert-danger">{{ session('error') }}</div>
             @endif
 
+            <div class="mb-3">
+                <a href="{{ route('despesas') }}" class="btn btn-outline-secondary btn-sm">
+                    <i class="fas fa-file-invoice-dollar"></i> Contas a Pagar
+                </a>
+                <a href="{{ route('relatorios.fluxo-caixa') }}" class="btn btn-outline-primary btn-sm">
+                    <i class="fas fa-chart-line"></i> Fluxo de Caixa
+                </a>
+                <a href="{{ route('relatorios.inadimplencia') }}" class="btn btn-outline-danger btn-sm">
+                    <i class="fas fa-exclamation-triangle"></i> Inadimplência
+                </a>
+                <a href="{{ route('exportar-financeiro-xlsx', request()->query()) }}" class="btn btn-outline-success btn-sm">
+                    <i class="fas fa-file-excel"></i> Exportar Excel
+                </a>
+            </div>
+
             <form id="filtro" action="{{ route('financeiro') }}" method="get" class="form-horizontal form-label-left" novalidate>
                 <div class="form-group row">
                     <label for="cliente_id" class="col-sm-1 col-form-label text-right">Cliente</label>

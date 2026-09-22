@@ -54,6 +54,7 @@
                         <button type="submit" class="btn btn-primary">Pesquisar</button>
                         <a href="{{ route($rotaExportarCsv, request()->query()) }}" class="btn btn-secondary">CSV</a>
                         <a href="{{ route($rotaExportarPdf, request()->query()) }}" class="btn btn-outline-secondary" target="_blank">PDF</a>
+                        <a href="{{ route('exportar-clientes-xlsx', request()->query()) }}" class="btn btn-outline-success">Excel</a>
                     </div>
                     <div class="col-sm-5">
                     </div>
@@ -328,6 +329,43 @@
                 </div>
             </div>
         </form>
+
+        @if($tela == 'alterar' && isset($clientes[0]))
+            <div class="card mt-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Acesso ao Portal do Cliente</h5>
+                </div>
+                <div class="card-body">
+                    <p class="text-muted small">
+                        Defina uma senha para que o cliente acesse o portal (login pelo CPF) em <code>/portal/login</code>.
+                        Informe a senha diretamente ao cliente — não é enviada por e-mail ou SMS.
+                        @if(empty($clientes[0]->cpf))
+                            <strong class="text-danger">Este cliente não possui CPF cadastrado; cadastre o CPF antes de liberar o acesso.</strong>
+                        @endif
+                    </p>
+                    <form action="{{ route('clientes.definir-acesso-portal') }}" method="post" class="form-horizontal form-label-left">
+                        @csrf
+                        <input type="hidden" name="id" value="{{ $clientes[0]->id }}">
+                        <div class="form-group row">
+                            <label for="portal_password" class="col-sm-2 col-form-label">Nova senha</label>
+                            <div class="col-sm-4">
+                                <input type="password" class="form-control @error('password') is-invalid @enderror" id="portal_password" name="password" minlength="6">
+                                @error('password')<div class="invalid-feedback">{{ $message }}</div>@enderror
+                            </div>
+                            <label for="portal_password_confirmation" class="col-sm-2 col-form-label">Confirmar senha</label>
+                            <div class="col-sm-4">
+                                <input type="password" class="form-control" id="portal_password_confirmation" name="password_confirmation" minlength="6">
+                            </div>
+                        </div>
+                        <div class="form-group row">
+                            <div class="col-sm-12">
+                                <button type="submit" class="btn btn-primary btn-sm">Salvar senha de acesso</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        @endif
 
     @stop
 @endif
